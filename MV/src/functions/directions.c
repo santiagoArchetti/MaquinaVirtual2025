@@ -1,6 +1,6 @@
-#include "directions.h"
+#include "../../include/directions.h"
 #include <stdio.h>
-#include "../components/segmentTable.h"
+#include "../../include/segmentTable.h"
 
 uint32_t getLogicalAddress(uint16_t segment, uint16_t offset) {  //devuelve la dirección lógica (no valida limites)
     uint32_t logicalAddress = (segment << 16) | offset;
@@ -17,11 +17,17 @@ uint32_t getFisicalAddress(uint32_t logicalAddress) {
     return fisicalAddress;
 }
     
-int isValidAddress(uint32_t fisicalAddress, uint32_t offset, uint16_t segment) { //valida si la dirección física es válida 
+int isValidAddress(uint32_t physicalAddress, uint32_t bytesCount, uint16_t segment) { //valida si la dirección física es válida 
     uint16_t base, length;
     getSegmentRange(segment, &base, &length);
 
-    if (fisicalAddress + offset > length + base || fisicalAddress < base) {
+    // Validar que la dirección física esté dentro del segmento
+    if (physicalAddress < base || physicalAddress >= base + length) {
+        return 0;
+    }
+    
+    // Validar que el acceso no se salga del segmento
+    if (physicalAddress + bytesCount > base + length) {
         return 0;
     }
     

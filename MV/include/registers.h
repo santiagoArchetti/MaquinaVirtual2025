@@ -1,12 +1,12 @@
-#ifndef REGISTRIES_H
-#define REGISTRIES_H
+#ifndef REGISTERS_H
+#define REGISTERS_H
 
 #include <stdint.h>
 
-#define REGISTRIES_SIZE 32
+#define REGISTERS_SIZE 32
 
 typedef struct {
-    uint32_t registerValue[REGISTRIES_SIZE];
+    uint32_t registerValue[REGISTERS_SIZE];
 } Registers;
 
 extern Registers registers;

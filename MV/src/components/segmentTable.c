@@ -1,4 +1,4 @@
-#include "segmentTable.h"
+#include "../../include/segmentTable.h"
 #include <stdio.h>
 
 SegmentTable segmentTable;  // definición global
@@ -38,6 +38,7 @@ void setSegmentDataLength(uint16_t dataLength) {
     // Guardamos solo longitud en la parte baja (base todavía = 0)
     segmentTable.segment[segmentTable.position] = (uint32_t)dataLength & 0xFFFF;
     writeBaseSegment();
+    segmentTable.position++;  // Avanzar a la siguiente entrada
 }
 
 // Consultar rango de un segmento

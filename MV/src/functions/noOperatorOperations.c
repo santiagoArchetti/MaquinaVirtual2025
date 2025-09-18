@@ -1,5 +1,5 @@
-#include "noOperatorOperations.h"
-#include "registries.h"
+#include "../../include/noOperatorsOperations.h"
+#include "../../include/registers.h"
 #include <stdio.h>
 
 void op_stop(void) {

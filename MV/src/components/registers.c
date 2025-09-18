@@ -1,17 +1,17 @@
-#include "registries.h"
+#include "../../include/registers.h"
 #include <stdio.h>
 
 Registers registers;  // definición global
 
 void initRegisters() { // inicializamos en 0 todos los registros
-    for (int i = 0; i < REGISTRIES_SIZE; i++) {
+    for (int i = 0; i < REGISTERS_SIZE; i++) {
         registers.registerValue[i] = 0;
     }
 }
 
 // Función para escribir un registro
 void writeRegister(int regIndex, uint32_t value) {
-    if (regIndex < 0 || regIndex >= REGISTRIES_SIZE) {
+    if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
         printf("Error: índice de registro inválido\n");
         return;
     }
@@ -20,7 +20,7 @@ void writeRegister(int regIndex, uint32_t value) {
 
 // Función para cargar el valor de un registro
 void getRegister(int regIndex, uint32_t* value) {
-    if (regIndex < 0 || regIndex >= REGISTRIES_SIZE) {
+    if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
         printf("Error: índice de registro inválido\n");
         return;
     }

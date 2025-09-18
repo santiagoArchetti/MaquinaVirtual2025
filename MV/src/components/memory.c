@@ -1,6 +1,9 @@
-#include "memory.h"
+#include "../../include/memory.h"
+#include "../../include/registers.h"
+#include "../../include/directions.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 MainMemory memory;  // definición global, celdas de 8 bits
 
@@ -47,12 +50,15 @@ int readByte(int address, uint8_t* value) {
 }
 
 
-void setMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *fisicalAddress, uint8_t *opCode) {
-    getLogicalAddress(csValue, IP, logicalAddress); 
-    writeRegister(0, logicalAddress);  //escribimos el lar
-    getFisicalAddress(logicalAddress, fisicalAddress); 
+void setMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress, uint8_t *opCode) {
+    *logicalAddress = getLogicalAddress(csValue, IP); 
+    writeRegister(0, *logicalAddress);  //escribimos el LAR
+    *physicalAddress = getFisicalAddress(*logicalAddress); 
     
-    writeRegister(1, fisicalAddress);  //escribimos el fisical address en el MAR 
-    readByte(fisicalAddress, opCode);
-    writeRegister(2, &opCode);  //escribimos el opCode en el MBR
+    // MAR: 2 bytes altos = cantidad de bytes (1), 2 bytes bajos = dirección física
+    uint32_t marValue = (1 << 16) | (*physicalAddress & 0xFFFF);
+    writeRegister(1, marValue);  //escribimos el MAR con cantidad y dirección física
+    
+    readByte(*physicalAddress, opCode);
+    writeRegister(2, *opCode);  //escribimos el opCode en el MBR
 }

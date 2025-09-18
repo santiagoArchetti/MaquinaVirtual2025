@@ -1,27 +1,31 @@
-#include "operations.h"
+#include "../../include/operations.h"
 #include <stdio.h>
-#include "twoOperatorsOperations.h"
-#include "oneOperatorOperations.h"
-#include "noOperatorOperations.h"
+#include "../../include/twoOperatorsOperations.h"
+#include "../../include/oneOperatorsOperations.h"
+#include "../../include/noOperatorsOperations.h"
 
 OpFunc0 opTable0[256];  // Operaciones sin operandos
 OpFunc1 opTable1[256];  // Operaciones con 1 operando
 OpFunc2 opTable2[256];  // Operaciones con 2 operandos
 
 void analizeInstruction(uint8_t instruction, uint8_t *op1Bytes, uint8_t *op2Bytes) {
-    uint8_t opCode = instruction & 0x1F;  // 5 bits menos significativos (bits 0-4)
-    uint8_t op1Type = (instruction >> 5) & 0x03;  // bits 5-6 (comparte bit 5 con opcode)
-    uint8_t op2Type = (instruction >> 7) & 0x01;   // bit 7 (solo 1 bit para segundo operando)
+    uint8_t opCode;
+    uint8_t op1Type, op2Type;
     
-    // Determinar número de operandos basado en el código
-    if (opCode >= 0x10 && opCode <= 0x1F) {  // 2 operandos
+    // Determinar tipo de instrucción por el bit más significativo
+    if (instruction & 0x80) {  // Bit 7 = 1: instrucción con 2 operandos
+        opCode = instruction & 0x1F;  // bits 0-4: código de operación
+        op1Type = (instruction >> 3) & 0x03;  // bits 3-4: tipo operando A
+        op2Type = (instruction >> 5) & 0x03;  // bits 5-6: tipo operando B
         *op1Bytes = analizeOperator(op1Type);
         *op2Bytes = analizeOperator(op2Type);
-    } else if (opCode >= 0x00 && opCode <= 0x08) {  // 1 operando
-         op1Type = (instruction >> 6) & 0x03;
+    } else if ((instruction & 0xC0) == 0x00) {  // Bits 7-6 = 00: instrucción con 1 operando
+        opCode = instruction & 0x1F;  // bits 0-4: código de operación
+        op1Type = (instruction >> 4) & 0x03;  // bits 4-5: tipo operando A
         *op1Bytes = analizeOperator(op1Type);
         *op2Bytes = 0;  // No hay segundo operando
-    } else (opCode == 0x0F) {  // sin operandos
+    } else {  // Bits 7-4 = 0000: instrucción sin operandos
+        opCode = instruction & 0x0F;  // bits 0-3: código de operación
         *op1Bytes = 0;
         *op2Bytes = 0;
     }
