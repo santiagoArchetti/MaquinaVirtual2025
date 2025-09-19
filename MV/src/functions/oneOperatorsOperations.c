@@ -8,14 +8,14 @@
 
 
 void op_sys(uint32_t op1) {
-    printf("SYS ejecutado con código: %u\n", op1);
+    printf("SYS executed with code: %u\n", op1);
     
     if (op1 == 0x01) {
         sys_read();
     } else if (op1 == 0x02) {
         sys_write();
     } else {
-        printf("Error: Código SYS inválido: %u\n", op1);
+        printf("Error: SYS code invalid: %u\n", op1);
         writeRegister(3, 0xFFFFFFFF); // Terminar ejecución por error
     }
 }
@@ -31,7 +31,7 @@ void sys_read() {
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
     
-    printf("SYS READ - Modo: 0x%02X, Dir: 0x%08X, Cant: %u, Tamaño: %u\n", 
+    printf("SYS READ - Mode: 0x%02X, Dir: 0x%08X, Cant: %u, Size: %u\n", 
            eax, edx, cantidad, tamano_celda);
     
     for (int i = 0; i < cantidad; i++) {
@@ -96,7 +96,7 @@ void sys_read() {
             }
             
         } else {
-            printf("Error: Modo de interpretación inválido: 0x%02X\n", eax);
+            printf("Error: Interpretation mode invalid: 0x%02X\n", eax);
             writeRegister(3, 0xFFFFFFFF);
             return;
         }
@@ -114,7 +114,7 @@ void sys_write() {
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
     
-    printf("SYS WRITE - Modo: 0x%02X, Dir: 0x%08X, Cant: %u, Tamaño: %u\n", 
+    printf("SYS WRITE - Mode: 0x%02X, Dir: 0x%08X, Cant: %u, Size: %u\n", 
            eax, edx, cantidad, tamano_celda);
     
     for (int i = 0; i < cantidad; i++) {
@@ -156,7 +156,7 @@ void sys_write() {
             printf("\n");
             
         } else {
-            printf("Error: Modo de interpretación inválido: 0x%02X\n", eax);
+            printf("Error: Interpretation mode invalid: 0x%02X\n", eax);
             writeRegister(3, 0xFFFFFFFF);
             return;
         }

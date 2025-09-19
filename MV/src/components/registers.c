@@ -12,7 +12,7 @@ void initRegisters() { // inicializamos en 0 todos los registros
 // Función para escribir un registro
 void writeRegister(int regIndex, uint32_t value) {
     if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
-        printf("Error: índice de registro inválido\n");
+        printf("Error: invalid register index\n");
         return;
     }
     registers.registerValue[regIndex] = value;
@@ -21,7 +21,7 @@ void writeRegister(int regIndex, uint32_t value) {
 // Función para cargar el valor de un registro
 void getRegister(int regIndex, uint32_t* value) {
     if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
-        printf("Error: índice de registro inválido\n");
+        printf("Error: invalid register index\n");
         return;
     }
     *value = registers.registerValue[regIndex];

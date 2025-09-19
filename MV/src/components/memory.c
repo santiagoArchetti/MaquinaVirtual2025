@@ -12,19 +12,19 @@ void initMemory() {
     // Inicializar toda la memoria con ceros
     memset(memory.data, 0, MEMORY_SIZE);
     memory.initialized = 1;
-    printf("Memoria principal inicializada con %d bytes (16 KiB)\n", MEMORY_SIZE);
-    printf("Direcciones disponibles: 0 a %d\n", MAX_ADDRESS);
+    printf("Main memory initialized with %d bytes (16 KiB)\n", MEMORY_SIZE);
+    printf("Available addresses: 0 to %d\n", MAX_ADDRESS);
 }
 
 // Función para escribir un byte en la memoria
 int writeByte(int address, uint8_t value) {
     if (!memory.initialized) {
-        printf("Error: Memoria no inicializada\n");
+        printf("Error: Memory not initialized\n");
         return 0;
     }
     
     if (address < 0 || address > MAX_ADDRESS) {
-        printf("Error: direccion %d fuera de rango (0-%d)\n", address, MAX_ADDRESS);
+        printf("Error: address %d out of range (0-%d)\n", address, MAX_ADDRESS);
         return 0;
     }
     
@@ -35,16 +35,15 @@ int writeByte(int address, uint8_t value) {
 // Función para leer un byte de la memoria
 int readByte(int address, uint8_t* value) {
     if (!memory.initialized) {
-        printf("Error: Memoria no inicializada\n");
+        printf("Error: Memory not initialized\n");
         return 0;
     }
     
     if (address < 0 || address > MAX_ADDRESS) {
-        printf("Error: direccion %d fuera de rango (0-%d)\n", address, MAX_ADDRESS);
+        printf("Error: address %d out of range (0-%d)\n", address, MAX_ADDRESS);
         return 0;
     }    
     *value = memory.data[address];
-    // printf("Leído byte 0x%02X desde dirección %d\n", *value, address);
     return 1;
 }
 

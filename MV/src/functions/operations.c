@@ -11,21 +11,22 @@ OpFunc2 opTable2[256];  // Operaciones con 2 operandos
 void analizeInstruction(uint8_t instruction, uint8_t *op1Bytes, uint8_t *op2Bytes) {
     uint8_t opCode;
     uint8_t op1Type, op2Type;
-    
-    // Determinar tipo de instrucción por el bit más significativo
-    if (instruction & 0x80) {  // Bit 7 = 1: instrucción con 2 operandos
-        opCode = instruction & 0x1F;  // bits 0-4: código de operación
-        op1Type = (instruction >> 3) & 0x03;  // bits 3-4: tipo operando A
-        op2Type = (instruction >> 5) & 0x03;  // bits 5-6: tipo operando B
+    if ((instruction & 0xC0) != 0x00) {  // bits 7-6 distintos de 00
+
+        op1Type = (instruction >> 4) & 0x03; // bits 5-4 → tipo A
+        op2Type = (instruction >> 6) & 0x03; // bits 7-6 → tipo B
         *op1Bytes = analizeOperator(op1Type);
         *op2Bytes = analizeOperator(op2Type);
-    } else if ((instruction & 0xC0) == 0x00) {  // Bits 7-6 = 00: instrucción con 1 operando
-        opCode = instruction & 0x1F;  // bits 0-4: código de operación
-        op1Type = (instruction >> 4) & 0x03;  // bits 4-5: tipo operando A
+    }
+    // Caso: instrucción con 1 operando
+    else if ((instruction & 0xE0) == 0x00 && (instruction & 0x1F) != 0x00) {  
+ 
+        op1Type = (instruction >> 6) & 0x03; // bits 7-6 → tipo A
         *op1Bytes = analizeOperator(op1Type);
-        *op2Bytes = 0;  // No hay segundo operando
-    } else {  // Bits 7-4 = 0000: instrucción sin operandos
-        opCode = instruction & 0x0F;  // bits 0-3: código de operación
+        *op2Bytes = 0;
+    }
+    // Caso: instrucción sin operandos
+    else {
         *op1Bytes = 0;
         *op2Bytes = 0;
     }

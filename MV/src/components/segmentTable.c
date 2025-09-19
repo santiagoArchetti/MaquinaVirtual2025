@@ -32,7 +32,7 @@ void writeBaseSegment() {
 // Función para escribir la longitud de un segmento
 void setSegmentDataLength(uint16_t dataLength) {
     if (segmentTable.position >= SEGMENT_TABLE_SIZE) {
-        printf("Error: tabla de segmentos llena\n");
+        printf("Error: segment table full\n");
         return;
     }
     // Guardamos solo longitud en la parte baja (base todavía = 0)
