@@ -11,49 +11,37 @@
 
 // Función para obtener el mnemónico de una instrucción
 const char* getInstructionMnemonic(uint8_t opCode, uint8_t op1Bytes, uint8_t op2Bytes) {
-    if (op1Bytes > 0 && op2Bytes > 0) {
-        // Operaciones con 2 operandos
         switch(opCode) {
-            case 0x10: return "MOV OP_A, OP_B";
-            case 0x11: return "ADD OP_A, OP_B";
-            case 0x12: return "SUB OP_A, OP_B";
-            case 0x13: return "MUL OP_A, OP_B";
-            case 0x14: return "DIV OP_A, OP_B";
-            case 0x15: return "CMP OP_A, OP_B";
-            case 0x16: return "SHL OP_A, OP_B";
-            case 0x17: return "SHR OP_A, OP_B";
-            case 0x18: return "SAR OP_A, OP_B";
-            case 0x19: return "AND OP_A, OP_B";
-            case 0x1A: return "OR OP_A, OP_B";
-            case 0x1B: return "XOR OP_A, OP_B";
-            case 0x1C: return "SWAP OP_A, OP_B";
-            case 0x1D: return "LDL OP_A, OP_B";
-            case 0x1E: return "LDH OP_A, OP_B";
-            case 0x1F: return "RND OP_A, OP_B";
-            default: return "UNK OP_A, OP_B";
-        }
-    } else if (op1Bytes > 0 && op2Bytes == 0) {
-        // Operaciones con 1 operando
-        switch(opCode) {
-            case 0x00: return "SYS OP_A";
-            case 0x01: return "JMP OP_A";
-            case 0x02: return "JZ OP_A";
-            case 0x03: return "JP OP_A";
-            case 0x04: return "JN OP_A";
-            case 0x05: return "JNZ OP_A";
-            case 0x06: return "JNP OP_A";
-            case 0x07: return "JNN OP_A";
-            case 0x08: return "NOT OP_A";
-            default: return "UNK OP_A";
-        }
-    } else {
-        // Operaciones sin operandos
-        switch(opCode) {
+            case 0x10: return "MOV";
+            case 0x11: return "ADD";
+            case 0x12: return "SUB";
+            case 0x13: return "MUL";
+            case 0x14: return "DIV";
+            case 0x15: return "CMP";
+            case 0x16: return "SHL";
+            case 0x17: return "SHR";
+            case 0x18: return "SAR";
+            case 0x19: return "AND";
+            case 0x1A: return "OR";
+            case 0x1B: return "XOR";
+            case 0x1C: return "SWAP";
+            case 0x1D: return "LDL";
+            case 0x1E: return "LDH";
+            case 0x1F: return "RND";
+            case 0x00: return "SYS";
+            case 0x01: return "JMP";
+            case 0x02: return "JZ";
+            case 0x03: return "JP";
+            case 0x04: return "JN";
+            case 0x05: return "JNZ";
+            case 0x06: return "JNP";
+            case 0x07: return "JNN";
+            case 0x08: return "NOT";
             case 0x0F: return "STOP";
             default: return "UNK";
         }
-    }
-}
+  }
+
 
 void beginExecution(FILE *file, int debug) {
     uint8_t opCode;
@@ -202,7 +190,7 @@ void beginExecution(FILE *file, int debug) {
                 if (op1Bytes > 0 && op2Bytes > 0) {
                     printf(" OP_A=0x%08X, OP_B=0x%08X", operandA, operandB);
                 } else if (op1Bytes > 0) {
-                    printf(" OP_A=0x%08X", operandA);
+                    printf("OP_A=0x%08X", operandA);
                 }
                 printf("\n");
                 fflush(stdout);
