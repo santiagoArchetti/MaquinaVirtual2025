@@ -29,7 +29,6 @@ int writeByte(int address, uint8_t value) {
     }
     
     memory.data[address] = value;
-    printf("Escrito byte 0x%02X en direccion %d\n", value, address);
     return 1;
 }
 
@@ -45,7 +44,7 @@ int readByte(int address, uint8_t* value) {
         return 0;
     }    
     *value = memory.data[address];
-    printf("Leído byte 0x%02X irección %d\n", *value, address);
+    // printf("Leído byte 0x%02X desde dirección %d\n", *value, address);
     return 1;
 }
 
