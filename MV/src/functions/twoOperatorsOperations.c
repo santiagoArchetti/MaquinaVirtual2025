@@ -7,59 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/*------------------- Funciones auxiliares -----------------*/
-
-void invertir (uint32_t *valueAux, uint32_t aux){
-    
-    for (int i = 0; i < 3; i++){        // Invierte el valor leido de la memoria big-endian
-        *valueAux = aux & 0x000000FF;
-        *valueAux = (*valueAux) << 8;
-        aux = aux >> 8;
-    }
-}
-
-void readMemory (uint8_t sizeOp, uint32_t *valueAux, uint32_t op) {
-    
-    uint32_t aux = 0x00000000;
-    uint32_t value;
-    uint32_t logicalAddress;
-    uint32_t fisicalAddress;
-
-    getMemoryAccess(26, op, &logicalAddress, &fisicalAddress, &value); // 26 porque el registro 26 es el CS
-
-    for (int i = 0; i < sizeOp ; i++) { // Lectura de memoria
-        aux = aux | value;
-        aux = aux << 8;
-        op += 1;
-        getMemoryAccess(26, op, &logicalAddress, &fisicalAddress, &value);  // 26 porque el registro 26 es el CS
-    }
-    invertir(valueAux, aux);
-}
-
-void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
-
-    uint32_t value;
-    uint32_t logicalAddress;
-    uint32_t fisicalAddress;
-
-    for (int i = 0; i < sizeOp ; i++) {
-        value = (uint8_t) (aux | 0x00);
-        aux = aux >> 8;
-        setMemoryAccess(26, op, &logicalAddress, &fisicalAddress, value);
-        op += 1;
-    }
-}
-
-void setCondicion(uint32_t value) {
-    if (value == 0)
-        writeRegister(17, 0x00000001);         // Setteamos el bit 0 (Z = 1)
-    else 
-        if (value < 0)
-            writeRegister(17, 0x00000002);     // Setteamos el bit 1 (N = 1)
-        else
-            writeRegister(17, 0x00000000);     // Apagamos los bits si es positivo
-}
-
 /*------------------- Funciones principales -----------------*/
 
 void op_mov(uint32_t op1, uint32_t op2) {
@@ -751,6 +698,41 @@ void op_rnd(uint32_t op1, uint32_t op2) {
         setCondicion(a);
     }
 }
+
+/*  ------------- Swap Alternativo -----------------------
+void op_swap(uint32_t op1, uint32_t op2) {
+    
+    uint8_t sizeOp1 = op1 >> 24;
+    uint8_t sizeOp2 = op2 >> 24;
+
+    if ( sizeOp1 == 1 || sizeOp2 == 1){ // Porque no se puede intercambiar con un valor inmediato
+        writeRegister(3,0xFFFFFFFF);
+    } else {
+        uint32_t a,b;
+        if ( sizeOp1 == 2 && sizeOp2 == 2 ){     // De registro a registro
+            getRegister(op1, &a);
+            op_mov(op1,op2);
+            writeRegister(op2, a);
+
+        } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // De registro a memoria
+            readMemory(sizeOp1, &a, op1);
+            op_mov(op1,op2);
+            writeRegister(op2, a);
+
+        } else if ( sizeOp1 == 3 && sizeOp2 == 3 ){     // Memoria a memoria
+            readMemory(sizeOp1, &a, op1);
+            op_mov(op1,op2);
+            writeMemory(sizeOp2, a, op2);
+            
+        } else if ( sizeOp1 == 2 && sizeOp2 == 3 ){     // Memoria a registra
+            getRegister(op1, &a);
+            op_mov(op1,op2);
+            writeMemory(sizeOp2, a, op2);
+        }
+        // SWAP no modifica CC - solo intercambia valores
+    }
+}
+*/
 
 /*  FORMATO AUXILIAR
 

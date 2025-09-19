@@ -22,7 +22,7 @@ void beginExecution(FILE *file) {
     }
 
     if (strncmp(header, "VMX25", 5) != 0 || version != 0x01) {
-        printf("Error: Archivo no válido (Header: %.5s, Versión: 0x%02X)\n", header, version);
+        printf("Error: Archivo no valido (Header: %.5s, Versión: 0x%02X)\n", header, version);
         return;
     }
 
@@ -36,7 +36,7 @@ void beginExecution(FILE *file) {
     fread(&sizeLow, sizeof(uint8_t), 1, file);
     codeSize = (sizeHigh << 8) | sizeLow;  // Big-endian
     
-    printf("Tamaño del código: %u bytes\n", codeSize);
+    printf("Tamaño del codigo: %u bytes\n", codeSize);
     setSegmentDataLength(codeSize);
     setSegmentDataLength(16384 - codeSize);
 
@@ -258,7 +258,7 @@ void showDisassemblerFromFile(FILE *file) {
     }
 
     if (strncmp(header, "VMX25", 5) != 0 || version != 0x01) {
-        printf("Error: File not valid (Header: %.5s, Version: 0x%02X)\n", header, version);
+        printf("Error: Archivo no valido (Header: %.5s, Version: 0x%02X)\n", header, version);
         return;
     }
 
@@ -279,7 +279,7 @@ void showDisassemblerFromFile(FILE *file) {
     
     for (int i = 0; i < codeSize; i++) {
         if (fread(&opCode, sizeof(uint8_t), 1, file) != 1) {
-            printf("Error: Code incomplete\n");
+            printf("Error: Codigo incompleto\n");
             return;
         }
         writeByte(i, opCode);

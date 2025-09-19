@@ -15,7 +15,7 @@ void op_sys(uint32_t op1) {
     } else if (op1 == 0x02) {
         sys_write();
     } else {
-        printf("Error: Código SYS inválido: %u\n", op1);
+        printf("Error: Codigo SYS invalido: %u\n", op1);
         writeRegister(3, 0xFFFFFFFF); // Terminar ejecución por error
     }
 }
@@ -222,21 +222,14 @@ void op_not(uint32_t op1) {
     uint8_t sizeOp1 = op1 >> 24;
     uint32_t aux;
 
-    if ( sizeOp1 == 1 ){    
-        /**
-        No puede negar un inmediato? 
-        porque donde lo guardaria
-        Pero igual deveria modificar el CC no?
-        */
+    if ( sizeOp1 == 1 ){
         writeRegister(3,0xFFFFFFFF);
     } else if ( sizeOp1 == 2){     // De registro
         getRegister(op1, &aux);
         writeRegister(op1, ~aux);
-    
     } else if ( sizeOp1 == 3){     // De memoria
         readMemory(sizeOp1, &aux, op1);
         writeMemory(sizeOp1, ~aux, op1);
-
     }
     setCondicion(~aux);
 }
