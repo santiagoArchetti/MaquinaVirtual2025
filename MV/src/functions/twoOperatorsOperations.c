@@ -20,7 +20,7 @@ void invertir (uint32_t *valueAux, uint32_t aux){
 
 void readMemory (uint8_t sizeOp, uint32_t *valueAux, uint32_t op) {
     
-    uint32_t aux;
+    uint32_t aux = 0x00000000;
     uint32_t value;
     uint32_t logicalAddress;
     uint32_t fisicalAddress;
@@ -616,7 +616,7 @@ void op_swap(uint32_t op1, uint32_t op2) {
             writeRegister(op1, b);
             writeMemory(sizeOp2, a, op2);
         }
-        // setCondicion(a ^ b);    // Esta funcion cambia el CC?
+        // SWAP no modifica CC - solo intercambia valores
     }
 }
 
@@ -731,7 +731,7 @@ void op_rnd(uint32_t op1, uint32_t op2) {
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // Inmediato a memoria
             a = (uint32_t)rand() % (op2 + 1);
-            writeMemory(sizeOp1, a);
+            writeMemory(sizeOp1, a, op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // De registro a memoria
             getRegister(op2, &b);

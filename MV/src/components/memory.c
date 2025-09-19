@@ -24,12 +24,12 @@ int writeByte(int address, uint8_t value) {
     }
     
     if (address < 0 || address > MAX_ADDRESS) {
-        printf("Error: Dirección %d fuera de rango (0-%d)\n", address, MAX_ADDRESS);
+        printf("Error: direccion %d fuera de rango (0-%d)\n", address, MAX_ADDRESS);
         return 0;
     }
     
     memory.data[address] = value;
-    printf("Escrito byte 0x%02X en dirección %d\n", value, address);
+    printf("Escrito byte 0x%02X en direccion %d\n", value, address);
     return 1;
 }
 
@@ -41,11 +41,11 @@ int readByte(int address, uint8_t* value) {
     }
     
     if (address < 0 || address > MAX_ADDRESS) {
-        printf("Error: Dirección %d fuera de rango (0-%d)\n", address, MAX_ADDRESS);
+        printf("Error: direccion %d fuera de rango (0-%d)\n", address, MAX_ADDRESS);
         return 0;
     }    
     *value = memory.data[address];
-    printf("Leído byte 0x%02X desde dirección %d\n", *value, address);
+    printf("Leído byte 0x%02X irección %d\n", *value, address);
     return 1;
 }
 
@@ -54,9 +54,9 @@ void memoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint3
     writeRegister(0, *logicalAddress);  //escribimos el LAR
     *physicalAddress = getFisicalAddress(*logicalAddress);
     
-    // MAR: 2 bytes altos = cantidad de bytes (1), 2 bytes bajos = dirección física
+    // MAR: 2 bytes altos = cantidad de bytes (1), 2 bytes bajos = direccion física
     uint32_t marValue = (1 << 16) | (*physicalAddress & 0xFFFF);
-    writeRegister(1, marValue);  //escribimos el MAR con cantidad y dirección física
+    writeRegister(1, marValue);  //escribimos el MAR con cantidad y direccion física
 }
 
 void getMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress,  uint8_t *opCode) {

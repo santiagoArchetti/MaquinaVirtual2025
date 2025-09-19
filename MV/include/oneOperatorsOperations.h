@@ -14,4 +14,8 @@ void op_jnp(uint32_t op1);
 void op_jnn(uint32_t op1);
 void op_not(uint32_t op1);
 
+// Funciones auxiliares para llamadas al sistema
+void sys_read(void);
+void sys_write(void);
+
 #endif

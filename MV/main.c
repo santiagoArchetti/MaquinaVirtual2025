@@ -13,57 +13,91 @@ void beginExecution(FILE *file) {
     uint8_t opCode;
     char header[6] = {0};
 
-    for (int i = 0; i < 5; i++) {
-      fread(&header[i], sizeof(uint8_t), 1, file);
+    // Leer header "VMX25" (5 bytes)
+    if (fread(header, sizeof(uint8_t), 5, file) != 5) {
+        printf("Error: No se pudo leer el header del archivo\n");
+        return;
     }
+    
+    // Leer versión (1 byte)
     uint8_t version;
-    fread(&version, sizeof(uint8_t), 1, file);
+    if (fread(&version, sizeof(uint8_t), 1, file) != 1) {
+        printf("Error: No se pudo leer la versión del archivo\n");
+        return;
+    }
 
-    if (strncmp(header, "VMX25", 5) == 0 && version == 0x01) {
+    // Verificar header y versión
+    if (strncmp(header, "VMX25", 5) != 0 || version != 0x01) {
+        printf("Error: Archivo no es un VMX25 válido (Header: %.5s, Versión: 0x%02X)\n", header, version);
+        return;
+    }
 
-        // Inicializar componentes
-        initMemory();
-        initRegisters();
-        initSegmentTable();
+    printf("=== INICIANDO MÁQUINA VIRTUAL VMX25 ===\n");
+    printf("Header: %.5s, Versión: %d\n", header, version);
 
-        uint16_t codeSize;
-        fread(&codeSize, sizeof(uint16_t), 1, file);   
-        
-          
-        // Configurar segmentos
-        setSegmentDataLength(codeSize); // Segmento código
-        setSegmentDataLength(16384-codeSize); // Segmento datos
+    // Inicializar componentes
+    initMemory();
+    initRegisters();
+    initSegmentTable();
+    initOpTable();  // ¡CRÍTICO! Inicializar tabla de operaciones
 
-        int i = 0;
-        while (fread(&opCode, sizeof(uint8_t), 1, file) == 1) {  //leemos el codigo y lo escribimos en memoria
-          writeByte(i, opCode);
-          i++;
+    // Leer tamaño del código (2 bytes, little-endian)
+    uint16_t codeSize;
+    if (fread(&codeSize, sizeof(uint16_t), 1, file) != 1) {
+        printf("Error: No se pudo leer el tamaño del código\n");
+        return;
+    }
+    
+    printf("Tamaño del código: %u bytes\n", codeSize);
+    
+    // Validar tamaño del código
+    if (codeSize > 16384) {
+        printf("Error: Tamaño del código excede la memoria disponible\n");
+        return;
+    }
+    
+    // Configurar segmentos según la consigna
+    setSegmentDataLength(codeSize);         // Segmento 0: código
+    setSegmentDataLength(16384 - codeSize); // Segmento 1: datos
+
+    // Cargar código en memoria (segmento de código)
+    printf("Cargando código en memoria...\n");
+    for (int i = 0; i < codeSize; i++) {
+        if (fread(&opCode, sizeof(uint8_t), 1, file) != 1) {
+            printf("Error: Código incompleto en el archivo\n");
+            return;
         }
+        writeByte(i, opCode);
+    }
 
-        // Inicializar registros según especificaciones
-        writeRegister(26, 0x00000000);  // CS = segmento código
-        writeRegister(27, 0x00010000);  // DS = segmento datos  
-        writeRegister(3, 0x00000000);   // IP = primera instrucción (apunta al CS)
+    // Inicializar registros según la consigna
+    writeRegister(26, 0x00000000);  // CS = 0 (segmento 0 = código)
+    writeRegister(27, 0x00010000);  // DS = 1 (segmento 1 = datos)  
+    writeRegister(3, 0x00000000);   // IP = 0 (primera instrucción)
+    
+    printf("Registros inicializados: CS=0x%08X, DS=0x%08X, IP=0x%08X\n", 
+           0x00000000, 0x00010000, 0x00000000);
 
-        //registro almaceno la ubicacion en el segmento y el offsets
-        uint16_t baseCodeSegment;
-        uint16_t codeSegmentValueLength;
-        uint32_t csValue;
-        getRegister(26, &csValue);
+    // Obtener información del segmento de código
+    uint16_t baseCodeSegment;
+    uint16_t codeSegmentValueLength;
+    uint32_t csValue;
+    getRegister(26, &csValue);
+    getSegmentRange(csValue, &baseCodeSegment, &codeSegmentValueLength);
+    
+    printf("Segmento de código: Base=0x%04X, Tamaño=%u\n", baseCodeSegment, codeSegmentValueLength);
+    printf("=== INICIANDO EJECUCION ===\n");
 
-        getSegmentRange(csValue, &baseCodeSegment, &codeSegmentValueLength);
+    uint32_t IP;
+    getRegister(3, &IP);
+    uint32_t logicalAddress, fisicalAddress;
 
-        uint32_t IP;
-        getRegister(3, &IP); // Leer IP del registro 3
-
-        uint32_t logicalAddress;  //con estas direcciones se accede a la memoria
-        uint32_t fisicalAddress;
-
-        while (IP < baseCodeSegment + codeSegmentValueLength && IP >= baseCodeSegment) {
+    // Ciclo principal de ejecución
+    while (IP < baseCodeSegment + codeSegmentValueLength && IP >= baseCodeSegment && IP != 0xFFFFFFFF) {
           
-          getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
-          
-          if (isValidAddress(fisicalAddress, 1, csValue)) {  //validamos si la direccion fisica es valida (1 byte)
+        getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
+        
+        if (isValidAddress(fisicalAddress, 1, csValue)) {  //validamos si la direccion fisica es valida (1 byte)
 
             readByte(fisicalAddress, &opCode); //leemos la posicion fisica de la memoria, este devuelve el opCode
 
@@ -140,31 +174,42 @@ void beginExecution(FILE *file) {
               if (opTable2[cleanOpCode] != NULL) {
                 opTable2[cleanOpCode](operandA, operandB);
               } else {
-                printf("Instrucción inválida: 0x%02X\n", cleanOpCode);
+                printf("ERROR: Instrucción inválida con 2 operandos: 0x%02X\n", cleanOpCode);
+                writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
               }
             } else if (op1Bytes > 0 && op2Bytes == 0) {
               // Un operando
               if (opTable1[cleanOpCode] != NULL) {
                 opTable1[cleanOpCode](operandA);
               } else {
-                printf("Instrucción inválida: 0x%02X\n", cleanOpCode);
+                printf("ERROR: Instrucción inválida con 1 operando: 0x%02X\n", cleanOpCode);
+                writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
               }
             } else if (op1Bytes == 0 && op2Bytes == 0) {
               // Sin operandos
               if (opTable0[cleanOpCode] != NULL) {
                 opTable0[cleanOpCode]();
               } else {
-                printf("Instrucción inválida: 0x%02X\n", cleanOpCode);
+                printf("ERROR: Instrucción inválida sin operandos: 0x%02X\n", cleanOpCode);
+                writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
               }
             }
-          }
-          else {
-            writeRegister(3, 0xFFFFFFFF);
-          }
-        } 
+        } else {
+            printf("ERROR: Fallo de segmento - Dirección física 0x%08X inválida\n", fisicalAddress);
+            writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+        }
+        
+        // Actualizar IP para la siguiente iteración
+        getRegister(3, &IP);
     }
-    else {
-        printf("File is not a valid MVX25 file\n");
+    
+    // Mostrar estado final
+    uint32_t finalIP;
+    getRegister(3, &finalIP);
+    if (finalIP == 0xFFFFFFFF) {
+        printf("=== EJECUCIÓN TERMINADA ===\n");
+    } else {
+        printf("=== EJECUCIÓN COMPLETADA - IP fuera del segmento de código ===\n");
     }
 }
 
@@ -268,33 +313,56 @@ int main(int argc, char* argv[]) {
         uint8_t opCode;
         char header[6] = {0};
         
-        for (int i = 0; i < 5; i++) {
-            fread(&header[i], sizeof(uint8_t), 1, file);
+        // Leer header "VMX25" (5 bytes)
+        if (fread(header, sizeof(uint8_t), 5, file) != 5) {
+            printf("Error: No se pudo leer el header del archivo\n");
+            fclose(file);
+            return 1;
         }
-        uint8_t version;
-        fread(&version, sizeof(uint8_t), 1, file);
         
+        // Leer versión (1 byte)
+        uint8_t version;
+        if (fread(&version, sizeof(uint8_t), 1, file) != 1) {
+            printf("Error: No se pudo leer la versión del archivo\n");
+            fclose(file);
+            return 1;
+        }
+        
+        // Verificar header y versión
         if (strncmp(header, "VMX25", 5) == 0 && version == 0x01) {
+            // Leer tamaño del código
             uint16_t codeSize;
-            fread(&codeSize, sizeof(uint16_t), 1, file);
+            if (fread(&codeSize, sizeof(uint16_t), 1, file) != 1) {
+                printf("Error: No se pudo leer el tamaño del código\n");
+                fclose(file);
+                return 1;
+            }
             
-            // Inicializar memoria y cargar código
+            printf("=== DISASSEMBLER VMX25 ===\n");
+            printf("Header: %.5s, Versión: %d, Tamaño: %u bytes\n", header, version, codeSize);
+            
+            // Inicializar componentes necesarios para el disassembler
             initMemory();
             initRegisters();
             initSegmentTable();
+            initOpTable();  // ¡CRÍTICO! También para el disassembler
             
             setSegmentDataLength(codeSize);
-            setSegmentDataLength(16384-codeSize);
+            setSegmentDataLength(16384 - codeSize);
             
-            int i = 0;
-            while (fread(&opCode, sizeof(uint8_t), 1, file) == 1) {
+            // Cargar código en memoria
+            for (int i = 0; i < codeSize; i++) {
+                if (fread(&opCode, sizeof(uint8_t), 1, file) != 1) {
+                    printf("Error: Código incompleto en el archivo\n");
+                    fclose(file);
+                    return 1;
+                }
                 writeByte(i, opCode);
-                i++;
             }
             
             showDisassembler(codeSize);
         } else {
-            printf("File is not a valid MVX25 file\n");
+            printf("Error: Archivo no es un VMX25 válido (Header: %.5s, Versión: 0x%02X)\n", header, version);
         }
     } else {
         beginExecution(file);
