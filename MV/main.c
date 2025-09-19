@@ -61,7 +61,7 @@ void beginExecution(FILE *file) {
 
         while (IP < baseCodeSegment + codeSegmentValueLength && IP >= baseCodeSegment) {
           
-          setMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
+          getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
           
           if (isValidAddress(fisicalAddress, 1, csValue)) {  //validamos si la direccion fisica es valida (1 byte)
 
@@ -85,7 +85,7 @@ void beginExecution(FILE *file) {
               int i = 0;
               uint8_t TOPE_IP = IP + op2Bytes;
               while (IP < TOPE_IP) {
-                setMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
+                getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
                 uint8_t byteValue;
                 readByte(fisicalAddress, &byteValue); //Lee de la memoria apuntada por IP
                 bytes[i] = byteValue;
@@ -113,7 +113,7 @@ void beginExecution(FILE *file) {
               uint8_t TOPE_IP = IP + op1Bytes;
 
               while (IP < TOPE_IP) {
-                setMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
+                getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
                 uint8_t byteValue;
                 readByte(fisicalAddress, &byteValue); //Lee de la memoria apuntada por IP
                 bytes[i] = byteValue;

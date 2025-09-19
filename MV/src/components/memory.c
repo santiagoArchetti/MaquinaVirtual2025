@@ -49,16 +49,30 @@ int readByte(int address, uint8_t* value) {
     return 1;
 }
 
-
-void setMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress, uint8_t *opCode) {
-    *logicalAddress = getLogicalAddress(csValue, IP); 
+void memoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress) {
+    *logicalAddress = getLogicalAddress(csValue, IP);
     writeRegister(0, *logicalAddress);  //escribimos el LAR
-    *physicalAddress = getFisicalAddress(*logicalAddress); 
+    *physicalAddress = getFisicalAddress(*logicalAddress);
     
     // MAR: 2 bytes altos = cantidad de bytes (1), 2 bytes bajos = dirección física
     uint32_t marValue = (1 << 16) | (*physicalAddress & 0xFFFF);
     writeRegister(1, marValue);  //escribimos el MAR con cantidad y dirección física
+}
+
+void getMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress,  uint8_t *opCode) {
     
-    readByte(*physicalAddress, opCode);
+    memoryAccess(csValue, IP, logicalAddress, physicalAddress);
+
     writeRegister(2, *opCode);  //escribimos el opCode en el MBR
+    readByte(*physicalAddress, opCode);
+
+}
+
+void setMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress,  uint8_t value) {
+
+    memoryAccess(csValue, IP, logicalAddress, physicalAddress);
+
+    writeRegister(2, value);
+    writeByte(*physicalAddress, value);
+
 }
