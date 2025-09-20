@@ -1,5 +1,6 @@
 #include "../../include/registers.h"
 #include <stdio.h>
+#include <math.h>
 
 Registers registers;  // definición global
 
@@ -32,4 +33,14 @@ int opCodeExists(uint8_t opCode){
         return 1;
     else
         return 0;
+}
+
+int binADecimal(uint32_t op) {
+    op = op & 0x0000003F;   // Sacamos el tipo de operando (3F por los 32 registros)
+    int sum = 0;
+    for (int i = 0 ; i < 24 ; i++){
+        if ( (op & 0x00000001) == 0x00000001 && sum < 32)
+            sum += pow(2, i);
+    }
+    return sum;
 }

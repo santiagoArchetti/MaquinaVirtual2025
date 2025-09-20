@@ -128,17 +128,3 @@ void setCondicion(uint32_t value) {
         else
             writeRegister(17, 0x00000000);     // Apagamos los bits si es positivo
 }
-
-int binADecimal(uint32_t op) {
-    op = op & 0x0000003F;   // Sacamos el tipo de operando (3F por los 32 registros)
-    int sum = 0;
-    for (int i = 0 ; i < 24 ; i++){
-        if ( (op & 0x00000001) == 0x00000001 && sum < 32)
-            sum += pow(2, i);
-    }
-    return sum;
-}
-/*
-0000 0000  0000 0000  0000 0000  0011 1111
-1 + 2 + 4 + 8 + 16 = 31
-*/

@@ -116,106 +116,106 @@ void beginExecution(FILE *file, int debug) {
             
             uint8_t cleanOpCode = opCode & 0x1F;
             writeRegister(4, cleanOpCode);
-            
-            IP = IP + 1;  // Avanzamos la instruccion
-
-            uint32_t operandA = 0, operandB = 0;
-
-            if (op2Bytes > 0) {
-              uint8_t bytes2[3] = {0};
-              int i = 0;
-
-              uint8_t TOPE_IP = IP + op2Bytes;
-              while (IP < TOPE_IP) {
-                getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
-                //uint8_t byteValue;
-                //readByte(fisicalAddress, &byteValue);
-                bytes2[i] = opCode;
-                if (debug) {
-                    printf(" %02X", opCode);
-                }             
-                i++;
-                IP += 1;
-              }
-
-              if (op2Bytes == 1) {
-                operandB = bytes2[0];
-              } else if (op2Bytes == 2) {
-                operandB = ( (uint16_t) (bytes2[0] << 8) ) | bytes2[1];
-              } else if (op2Bytes == 3) {
-                operandB = ( (uint32_t) (bytes2[0] << 16) ) | ( (uint16_t) (bytes2[1] << 8) )| bytes2[2];
-              }
-              operandB = ( (uint32_t) op2Bytes << 24 ) | operandB;   // Asignacion del codigo de operado
-              writeRegister(6, operandB);
-            }  
-
-            
-              
-            if (op1Bytes > 0) {
-              uint8_t bytes1[3] = {0};
-              int i = 0;
-              uint8_t TOPE_IP = IP + op1Bytes;
-
-              while (IP < TOPE_IP) {
-                getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
-                // uint8_t byteValue;
-                // readByte(fisicalAddress, &byteValue);
-                bytes1[i] = opCode;
-                if (debug) {
-                    printf(" %02X", opCode);
-                }
-                i++;
-                IP = IP + 1;
-              }
-              
-              if (op1Bytes == 1) {
-                operandA = bytes1[0];
-              } else if (op1Bytes == 2) {
-                operandA = ( (uint16_t) (bytes1[0] << 8) ) | bytes1[1];
-              } else if (op1Bytes == 3) {
-                operandA = ( (uint32_t) (bytes1[0] << 16) ) | ( (uint16_t) (bytes1[1] << 8) ) | bytes1[2];
-              }
-              operandA = ( (uint32_t) op1Bytes << 24 ) | operandA;   // Asignacion del codigo de operado
-              writeRegister(6, operandA);
-            }
-            
-            // Debug: mostrar mnemónico y ejecutar operación
-            if (debug) {
-                // Mostrar mnemónico
-                const char* mnemonic = getInstructionMnemonic(cleanOpCode, op1Bytes, op2Bytes);
-                printf(" | %s", mnemonic);
-                if (op1Bytes > 0 && op2Bytes > 0) {
-                    printf(" OP_A=0x%08X, OP_B=0x%08X", operandA, operandB);
-                } else if (op1Bytes > 0) {
-                    printf("OP_A=0x%08X", operandA);
-                }
-                printf("\n");
-                fflush(stdout);
-            }
-
             if (opCodeExists(opCode)){
-              if (op1Bytes > 0 && op2Bytes > 0) {
-                if (opTable2[cleanOpCode] != NULL) {  // Dos operandos: operandA (destino), operandB (fuente)
-                  opTable2[cleanOpCode](operandA, operandB);
-                } else {
-                  printf("ERROR: Instrucción inválida con 2 operandos: 0x%02X\n", cleanOpCode);
-                  writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+
+              IP = IP + 1;  // Avanzamos la instruccion
+
+              uint32_t operandA = 0, operandB = 0;
+
+              if (op2Bytes > 0) {
+                uint8_t bytes2[3] = {0};
+                int i = 0;
+
+                uint8_t TOPE_IP = IP + op2Bytes;
+                while (IP < TOPE_IP) {
+                  getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
+                  //uint8_t byteValue;
+                  //readByte(fisicalAddress, &byteValue);
+                  bytes2[i] = opCode;
+                  if (debug) {
+                      printf(" %02X", opCode);
+                  }             
+                  i++;
+                  IP += 1;
                 }
-              } else if (op1Bytes > 0 && op2Bytes == 0) {
-                if (opTable1[cleanOpCode] != NULL) {  // Un operando
-                  opTable1[cleanOpCode](operandA);
-                } else {
-                  printf("ERROR: Instrucción inválida con 1 operando: 0x%02X\n", cleanOpCode);
-                  writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+
+                if (op2Bytes == 1) {
+                  operandB = bytes2[0];
+                } else if (op2Bytes == 2) {
+                  operandB = ( (uint16_t) (bytes2[0] << 8) ) | bytes2[1];
+                } else if (op2Bytes == 3) {
+                  operandB = ( (uint32_t) (bytes2[0] << 16) ) | ( (uint16_t) (bytes2[1] << 8) )| bytes2[2];
                 }
-              } else if (op1Bytes == 0 && op2Bytes == 0) {
-                if (opTable0[cleanOpCode] != NULL) {  // Sin operandos
-                  opTable0[cleanOpCode]();
-                } else {
-                  printf("ERROR: Instrucción inválida sin operandos: 0x%02X\n", cleanOpCode);
-                  writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+                operandB = ( (uint32_t) op2Bytes << 24 ) | operandB;   // Asignacion del codigo de operado
+                writeRegister(6, operandB);
+              }  
+
+              
+                
+              if (op1Bytes > 0) {
+                uint8_t bytes1[3] = {0};
+                int i = 0;
+                uint8_t TOPE_IP = IP + op1Bytes;
+
+                while (IP < TOPE_IP) {
+                  getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
+                  // uint8_t byteValue;
+                  // readByte(fisicalAddress, &byteValue);
+                  bytes1[i] = opCode;
+                  if (debug) {
+                      printf(" %02X", opCode);
+                  }
+                  i++;
+                  IP = IP + 1;
                 }
+                
+                if (op1Bytes == 1) {
+                  operandA = bytes1[0];
+                } else if (op1Bytes == 2) {
+                  operandA = ( (uint16_t) (bytes1[0] << 8) ) | bytes1[1];
+                } else if (op1Bytes == 3) {
+                  operandA = ( (uint32_t) (bytes1[0] << 16) ) | ( (uint16_t) (bytes1[1] << 8) ) | bytes1[2];
+                }
+                operandA = ( (uint32_t) op1Bytes << 24 ) | operandA;   // Asignacion del codigo de operado
+                writeRegister(6, operandA);
               }
+              
+              // Debug: mostrar mnemónico y ejecutar operación
+              if (debug) {
+                  // Mostrar mnemónico
+                  const char* mnemonic = getInstructionMnemonic(cleanOpCode, op1Bytes, op2Bytes);
+                  printf(" | %s", mnemonic);
+                  if (op1Bytes > 0 && op2Bytes > 0) {
+                      printf(" OP_A=0x%08X, OP_B=0x%08X", operandA, operandB);
+                  } else if (op1Bytes > 0) {
+                      printf("OP_A=0x%08X", operandA);
+                  }
+                  printf("\n");
+                  fflush(stdout);
+              }
+
+                if (op1Bytes > 0 && op2Bytes > 0) {
+                  if (opTable2[cleanOpCode] != NULL) {  // Dos operandos: operandA (destino), operandB (fuente)
+                    opTable2[cleanOpCode](operandA, operandB);
+                  } else {
+                    printf("ERROR: Instrucción inválida con 2 operandos: 0x%02X\n", cleanOpCode);
+                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+                  }
+                } else if (op1Bytes > 0 && op2Bytes == 0) {
+                  if (opTable1[cleanOpCode] != NULL) {  // Un operando
+                    opTable1[cleanOpCode](operandA);
+                  } else {
+                    printf("ERROR: Instrucción inválida con 1 operando: 0x%02X\n", cleanOpCode);
+                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+                  }
+                } else if (op1Bytes == 0 && op2Bytes == 0) {
+                  if (opTable0[cleanOpCode] != NULL) {  // Sin operandos
+                    opTable0[cleanOpCode]();
+                  } else {
+                    printf("ERROR: Instrucción inválida sin operandos: 0x%02X\n", cleanOpCode);
+                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+                  }
+                }
             } else  // no existe el codigo de operacion
               writeRegister(3,0xFFFFFFFF);
 
