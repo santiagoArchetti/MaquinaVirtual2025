@@ -9,26 +9,22 @@ OpFunc1 opTable1[256];  // Operaciones con 1 operando
 OpFunc2 opTable2[256];  // Operaciones con 2 operandos
 
 void analizeInstruction(uint8_t instruction, uint8_t *op1Bytes, uint8_t *op2Bytes) {
-    uint8_t opCode;
     uint8_t op1Type, op2Type;
-    if ((instruction & 0xC0) != 0x00) {  // bits 7-6 distintos de 00
+    
+    if ((instruction & 0x10) == 0x10) {             // Para saber si es de 2 operandos (0001 0000)
 
-        op2Type = (instruction >> 4) & 0x03; // bits 5-4 → tipo A
-        op1Type = (instruction >> 6) & 0x03; // bits 7-6 → tipo B
-        *op2Bytes = analizeOperator(op2Type);
-        *op1Bytes = analizeOperator(op1Type);
-    }
-    // Caso: instrucción con 1 operando
-    else if ((instruction & 0xE0) == 0x00 && (instruction & 0x1F) != 0x00) {  
+        op1Type = (instruction >> 4) & 0x03;    // bits 5-4 → tipo A
+        op2Type = (instruction >> 6) & 0x03;    // bits 7-6 → tipo B
+        *op1Bytes = op1Type;
+        *op2Bytes = op2Type;
+    } else if ((instruction & 0x0F) != 0x0F) {      // Caso: instrucción con 1 operando
  
-        op2Type = (instruction >> 6) & 0x03; // bits 7-6 → tipo A
-        *op2Bytes = analizeOperator(op2Type);
-        *op1Bytes = 0;
-    }
-    // Caso: instrucción sin operandos
-    else {
-        *op2Bytes = 0;
-        *op1Bytes = 0;
+        op1Type = (instruction >> 6) & 0x03;    // bits 7-6 → tipo A
+        *op1Bytes = op1Type;
+        *op2Bytes = 0x0;
+    } else {                                        // Caso: instrucción sin operandos
+        *op2Bytes = 0x0;
+        *op1Bytes = 0x0;
     }
 }
 
@@ -41,7 +37,6 @@ uint8_t analizeOperator(uint8_t operatorType) {
         default: return 0;
     }
 }
-
 
 // Inicializa las tablas con todas las punteros a operaciones
 void initOpTable(void) {
@@ -97,3 +92,52 @@ if (opTable[opcode] != NULL) {
     printf("Instrucción inválida: 0x%02X\n", opcode);
     // man
  */
+
+ 
+/* -------- Otra posible version -----------------
+void analizeInstruction(uint8_t instruction, uint8_t *op1Bytes, uint8_t *op2Bytes) {
+    uint8_t opCode;
+    uint8_t op1Type, op2Type;
+    if ((instruction & 0x10) == 0x10) {             // Para saber si es de 2 operandos
+
+        op1Type = (instruction >> 4) & 0x03;    // bits 5-4 → tipo A
+        op2Type = (instruction >> 6) & 0x03;    // bits 7-6 → tipo B
+        *op2Bytes = analizeOperator(op2Type);
+        *op1Bytes = analizeOperator(op1Type);
+    } else if ((instruction & 0x0F) != 0x0F) {      // Caso: instrucción con 1 operando
+ 
+        op1Type = (instruction >> 6) & 0x03;    // bits 7-6 → tipo A
+        *op1Bytes = analizeOperator(op1Type);
+        *op2Bytes = 0;
+    } else {                                        // Caso: instrucción sin operandos
+        *op2Bytes = 0;
+        *op1Bytes = 0;
+    }
+}
+*/
+
+/* ------------- original -----------------------
+void analizeInstruction(uint8_t instruction, uint8_t *op1Bytes, uint8_t *op2Bytes) {
+    uint8_t opCode;
+    uint8_t op1Type, op2Type;
+    if ((instruction & 0xC0) != 0x00) {  // bits 7-6 distintos de 00
+
+        op2Type = (instruction >> 4) & 0x03; // bits 5-4 → tipo A
+        op1Type = (instruction >> 6) & 0x03; // bits 7-6 → tipo B
+        *op2Bytes = analizeOperator(op2Type);
+        *op1Bytes = analizeOperator(op1Type);
+    }
+    // Caso: instrucción con 1 operando
+    else if ((instruction & 0xE0) == 0x00 && (instruction & 0x1F) != 0x00) {  
+ 
+        op2Type = (instruction >> 6) & 0x03; // bits 7-6 → tipo A
+        *op2Bytes = analizeOperator(op2Type);
+        *op1Bytes = 0;
+    }
+    // Caso: instrucción sin operandos
+    else {
+        *op2Bytes = 0;
+        *op1Bytes = 0;
+    }
+}
+*/

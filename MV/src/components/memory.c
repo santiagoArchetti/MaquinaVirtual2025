@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <math.h>
 
 MainMemory memory;  // definición global, celdas de 8 bits
 
@@ -74,3 +75,70 @@ void setMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, ui
     writeByte(*physicalAddress, value);
 
 }
+
+/*------------------- Funciones auxiliares -----------------*/
+
+void invertir (uint32_t *valueAux, uint32_t aux){
+    
+    for (int i = 0; i < 3; i++){        // Invierte el valor leido de la memoria big-endian
+        *valueAux = aux & 0x000000FF;
+        *valueAux = (*valueAux) << 8;
+        aux = aux >> 8;
+    }
+}
+
+void readMemory (uint8_t sizeOp, uint32_t *valueAux, uint32_t op) {
+    
+    uint32_t aux = 0x00000000;
+    uint32_t value;
+    uint32_t logicalAddress;
+    uint32_t fisicalAddress;
+
+    getMemoryAccess(26, op, &logicalAddress, &fisicalAddress, &value); // 26 porque el registro 26 es el CS
+
+    for (int i = 0; i < sizeOp ; i++) { // Lectura de memoria
+        aux = aux | value;
+        aux = aux << 8;
+        op += 1;
+        getMemoryAccess(26, op, &logicalAddress, &fisicalAddress, &value);  // 26 porque el registro 26 es el CS
+    }
+    invertir(valueAux, aux);
+}
+
+void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
+
+    uint32_t value;
+    uint32_t logicalAddress;
+    uint32_t fisicalAddress;
+
+    for (int i = 0; i < sizeOp ; i++) {
+        value = (uint8_t) (aux | 0x00);
+        aux = aux >> 8;
+        setMemoryAccess(26, op, &logicalAddress, &fisicalAddress, value);
+        op += 1;
+    }
+}
+
+void setCondicion(uint32_t value) {
+    if (value == 0)
+        writeRegister(17, 0x00000001);         // Setteamos el bit 0 (Z = 1)
+    else 
+        if (value < 0)
+            writeRegister(17, 0x00000002);     // Setteamos el bit 1 (N = 1)
+        else
+            writeRegister(17, 0x00000000);     // Apagamos los bits si es positivo
+}
+
+int binADecimal(uint32_t op) {
+    op = op & 0x0000003F;   // Sacamos el tipo de operando (3F por los 32 registros)
+    int sum = 0;
+    for (int i = 0 ; i < 24 ; i++){
+        if ( (op & 0x00000001) == 0x00000001 && sum < 32)
+            sum += pow(2, i);
+    }
+    return sum;
+}
+/*
+0000 0000  0000 0000  0000 0000  0011 1111
+1 + 2 + 4 + 8 + 16 = 31
+*/

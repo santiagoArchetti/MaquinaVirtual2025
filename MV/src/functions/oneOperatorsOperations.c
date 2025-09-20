@@ -216,22 +216,18 @@ void op_jnn(uint32_t op1) {
         writeRegister(3, op1);  // Saltar
     }
 }
-
+/* ----------------------------------------------------- */
 void op_not(uint32_t op1) {
 
     uint8_t sizeOp1 = op1 >> 24;
     uint32_t aux;
+    int reg = binADecimal(op1);
 
-    if ( sizeOp1 == 1 ){    
-        /**
-        No puede negar un inmediato? 
-        porque donde lo guardaria
-        Pero igual deveria modificar el CC no?
-        */
+    if ( sizeOp1 == 2 ){
         writeRegister(3,0xFFFFFFFF);
-    } else if ( sizeOp1 == 2){     // De registro
-        getRegister(op1, &aux);
-        writeRegister(op1, ~aux);
+    } else if ( sizeOp1 == 1){     // De registro
+        getRegister(reg, &aux);
+        writeRegister(reg, ~aux);
     
     } else if ( sizeOp1 == 3){     // De memoria
         readMemory(sizeOp1, &aux, op1);
