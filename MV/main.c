@@ -82,7 +82,7 @@ void beginExecution(FILE *file, int debug) {
             
             // Debug: mostrar informacion de la instruccion
             if (debug) {
-                printf("[%04X] %02X ", IP, opCode);
+                printf("[%04X] %02X", IP, opCode);
                 fflush(stdout);
             }
             
@@ -150,6 +150,18 @@ void beginExecution(FILE *file, int debug) {
               
               // Debug: mostrar mnemonico y ejecutar operacion 
               if (debug) {
+                  // Calcular el numero total de bytes mostrados
+                  int totalBytesShown = 1 + op1Bytes + op2Bytes; // opcode + operandos
+                  
+                  // Calcular padding para alinear mnemonicos (maximo 8 bytes = 24 chars)
+                  int paddingNeeded = 25 - (totalBytesShown * 3); // 3 chars por byte
+                  if (paddingNeeded < 0) paddingNeeded = 0;
+                  
+                  // Agregar padding
+                  for (int p = 0; p < paddingNeeded; p++) {
+                      printf(" ");
+                  }
+                  
                   // Mostrar mnemonico
                   const char* mnemonic = getInstructionMnemonic(cleanOpCode, op1Bytes, op2Bytes);
                   printf("| %-4s", mnemonic);
@@ -202,7 +214,7 @@ void beginExecution(FILE *file, int debug) {
         } else {
             printf("==========================================\n");
             printf("        EXECUTION COMPLETED - IP          \n");
-            printf("        outside code segment              \n");
+            printf("          outside code segment             \n");
             printf("==========================================\n");
         }
     }

@@ -8,10 +8,8 @@
 
 
 void op_sys(uint32_t op1) {
-    printf("SYS executed with code: %08X\n", op1);
     
     int operacionCode = op1 & 0x0000001F;
-    printf("Operation code: %02X\n", operacionCode);
     if (operacionCode == 01) {
         sys_read();
     } else if (operacionCode == 02) {
@@ -33,7 +31,7 @@ void sys_read() {
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
     
-    printf("SYS READ - Mode: 0x%02X | Dir: 0x%08X | Count: %u | Size: %u\n", 
+    printf("SYS READ | Dir: 0x%08X | Count: %u | Size: %u\n", 
            eax, edx, cantidad, tamano_celda);
     
     for (int i = 0; i < cantidad; i++) {
@@ -116,7 +114,7 @@ void sys_write() {
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
     
-    printf("SYS WRITE - Mode: 0x%02X | Dir: 0x%08X | Count: %u | Size: %u\n", 
+    printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %u\n", 
            eax, edx, cantidad, tamano_celda);
     
     for (int i = 0; i < cantidad; i++) {
