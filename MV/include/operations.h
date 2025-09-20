@@ -16,5 +16,5 @@ extern OpFunc2 opTable2[256];  // Operaciones con 2 operandos
 void initOpTable(void);
 void analizeInstruction(uint8_t instruction, uint8_t* op1Bytes, uint8_t* op2Bytes);
 uint8_t analizeOperator(uint8_t operator);
-
+const char* getInstructionMnemonic(uint8_t opCode, uint8_t op1Bytes, uint8_t op2Bytes);
 #endif

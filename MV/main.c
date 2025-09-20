@@ -9,38 +9,6 @@
 #include "include/segmentTable.h"
 #include "include/directions.h"
 
-// Funcion para obtener el mnemonico de una instruccion
-const char* getInstructionMnemonic(uint8_t opCode, uint8_t op1Bytes, uint8_t op2Bytes) {
-        switch(opCode) {
-            case 0x10: return "MOV";
-            case 0x11: return "ADD";
-            case 0x12: return "SUB";
-            case 0x13: return "MUL";
-            case 0x14: return "DIV";
-            case 0x15: return "CMP";
-            case 0x16: return "SHL";
-            case 0x17: return "SHR";
-            case 0x18: return "SAR";
-            case 0x19: return "AND";
-            case 0x1A: return "OR";
-            case 0x1B: return "XOR";
-            case 0x1C: return "SWAP";
-            case 0x1D: return "LDL";
-            case 0x1E: return "LDH";
-            case 0x1F: return "RND";
-            case 0x00: return "SYS";
-            case 0x01: return "JMP";
-            case 0x02: return "JZ";
-            case 0x03: return "JP";
-            case 0x04: return "JN";
-            case 0x05: return "JNZ";
-            case 0x06: return "JNP";
-            case 0x07: return "JNN";
-            case 0x08: return "NOT";
-            case 0x0F: return "STOP";
-            default: return "UNK";
-        }
-}
 
 void beginExecution(FILE *file, int debug) {
     uint8_t opCode;
@@ -88,10 +56,14 @@ void beginExecution(FILE *file, int debug) {
     getSegmentRange(csValue, &baseCodeSegment, &codeSegmentValueLength);
     
     if (debug) {
-        printf("=== DISASSEMBLER VMX25 ===\n");
-        printf("Header: VMX25, Version: %d, Size: %u bytes\n", version, codeSize);
+        printf("==========================================\n");
+        printf("           DISASSEMBLER VMX25            \n");
+        printf("==========================================\n");
+        printf("Header: VMX25 | Version: %d | Size: %u bytes\n", version, codeSize);
     } else {
-        printf("=== STARTING EXECUTION ===\n");
+        printf("==========================================\n");
+        printf("          STARTING EXECUTION             \n");
+        printf("==========================================\n");
     }
 
     uint32_t IP;
@@ -110,7 +82,7 @@ void beginExecution(FILE *file, int debug) {
             
             // Debug: mostrar informacion de la instruccion
             if (debug) {
-                printf("[%04X] %02X", IP, opCode);
+                printf("[%04X] %02X ", IP, opCode);
                 fflush(stdout);
             }
             
@@ -180,40 +152,31 @@ void beginExecution(FILE *file, int debug) {
               if (debug) {
                   // Mostrar mnemonico
                   const char* mnemonic = getInstructionMnemonic(cleanOpCode, op1Bytes, op2Bytes);
-                  printf(" | %s", mnemonic);
-                  if (op1Bytes > 0 && op2Bytes > 0) {
-                      printf(" OP_A=0x%08X, OP_B=0x%08X", operandA, operandB);
-                  } else if (op1Bytes > 0) {
-                      printf("OP_A=0x%08X", operandA);
-                  }
+                  printf("| %-4s", mnemonic);
+
+                   if (op1Bytes > 0 && op2Bytes > 0) {
+                       printf(" ");
+                       getOperandName(operandA);
+                       printf(", ");
+                       getOperandName(operandB);
+                   } else if (op1Bytes > 0) {
+                       printf(" ");
+                       getOperandName(operandA);
+                   }
                   printf("\n");
                   fflush(stdout);
               }
 
                 if (op1Bytes > 0 && op2Bytes > 0) {
-                  if (opTable2[cleanOpCode] != NULL) {  // Dos operandos: operandA (destino), operandB (fuente)
                     opTable2[cleanOpCode](operandA, operandB);
-                  } else {
-                    printf("ERROR: Instruccion invalida con 2 operandos: 0x%02X\n", cleanOpCode);
-                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion
-                  }
                 } else if (op1Bytes > 0 && op2Bytes == 0) {
-                  if (opTable1[cleanOpCode] != NULL) {  // Un operando
                     opTable1[cleanOpCode](operandA);
-                  } else {
-                    printf("ERROR: Instruccion invalida con 1 operando: 0x%02X\n", cleanOpCode);
-                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion
-                  }
-                } else if (op1Bytes == 0 && op2Bytes == 0) {
-                  if (opTable0[cleanOpCode] != NULL) {  // Sin operandos
-                    opTable0[cleanOpCode]();
-                  } else {
-                    printf("ERROR: Instruccion invalida sin operandos: 0x%02X\n", cleanOpCode);
-                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion
-                  }
+                } else{
+                  opTable0[cleanOpCode]();
                 }
-            } else  // no existe el codigo de operacion
+            } else{
               writeRegister(3,0xFFFFFFFF);
+            }
 
         } else {  // Fallo de segmento
             printf("ERROR: Fallo de segmento - Direccion fisica 0x%08X invalida\n", fisicalAddress);
@@ -223,21 +186,24 @@ void beginExecution(FILE *file, int debug) {
 
         // Actualizar IP para la siguiente iteracion
         getRegister(3, &IP);
-        /*
-        if (debug) {
-            printf("IP: %08X\n", IP);
-        }*/
     }
     
 
     getRegister(3, &IP);
     if (debug) {
-        printf("===================\n");
+        printf("==========================================\n");
+        printf("           END OF DISASSEMBLER           \n");
+        printf("==========================================\n");
     } else {
         if (IP == 0xFFFFFFFF) {
-            printf("=== EJECUCIoN TERMINADA ===\n");
+            printf("==========================================\n");
+            printf("           EXECUTION TERMINATED           \n");
+            printf("==========================================\n");
         } else {
-            printf("=== EJECUCIoN COMPLETADA - IP fuera del segmento de codigo ===\n");
+            printf("==========================================\n");
+            printf("        EXECUTION COMPLETED - IP          \n");
+            printf("        outside code segment              \n");
+            printf("==========================================\n");
         }
     }
 }
@@ -245,13 +211,17 @@ void beginExecution(FILE *file, int debug) {
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        printf("Uso: %s <archivo.vmx> [-d]\n", argv[0]);
+        printf("==========================================\n");
+        printf("              VMX25 EMULATOR              \n");
+        printf("==========================================\n");
+        printf("Usage: %s <file.vmx> [-d]\n", argv[0]);
+        printf("  -d: Debug mode (disassembler)\n");
         return 1;
     }
     
     FILE *file = fopen(argv[1], "rb");
     if (!file) {
-        printf("Error al abrir el archivo %s\n", argv[1]);
+        printf("Error: Cannot open file '%s'\n", argv[1]);
         return 1;
     }
     

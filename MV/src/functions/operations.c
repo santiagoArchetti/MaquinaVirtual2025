@@ -80,6 +80,40 @@ void initOpTable(void) {
     opTable0[0x0F] = op_stop; // STOP
 }
 
+// Funcion para obtener el mnemonico de una instruccion
+const char* getInstructionMnemonic(uint8_t opCode, uint8_t op1Bytes, uint8_t op2Bytes) {
+    switch(opCode) {
+        case 0x10: return "MOV";
+        case 0x11: return "ADD";
+        case 0x12: return "SUB";
+        case 0x13: return "MUL";
+        case 0x14: return "DIV";
+        case 0x15: return "CMP";
+        case 0x16: return "SHL";
+        case 0x17: return "SHR";
+        case 0x18: return "SAR";
+        case 0x19: return "AND";
+        case 0x1A: return "OR";
+        case 0x1B: return "XOR";
+        case 0x1C: return "SWAP";
+        case 0x1D: return "LDL";
+        case 0x1E: return "LDH";
+        case 0x1F: return "RND";
+        case 0x00: return "SYS";
+        case 0x01: return "JMP";
+        case 0x02: return "JZ";
+        case 0x03: return "JP";
+        case 0x04: return "JN";
+        case 0x05: return "JNZ";
+        case 0x06: return "JNP";
+        case 0x07: return "JNN";
+        case 0x08: return "NOT";
+        case 0x0F: return "STOP";
+        default: return "UNK";
+    }
+}
+
+
 
 /* ejemplo de uso fuera del archivo operations.c
 uint8_t opcode = memoria[ip]; // leiste un byte de memoria que corresponde al opcode

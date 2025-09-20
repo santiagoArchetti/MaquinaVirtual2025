@@ -13,7 +13,7 @@ void initRegisters() { // inicializamos en 0 todos los registros
 // Funcion para escribir un registro
 void writeRegister(int regIndex, uint32_t value) {
     if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
-        printf("Error: invalid register index | %d \n",regIndex);
+        printf("Error: Invalid register index: %d\n", regIndex);
         return;
     }
     registers.registerValue[regIndex] = value;
@@ -22,7 +22,7 @@ void writeRegister(int regIndex, uint32_t value) {
 // Funcion para cargar el valor de un registro
 void getRegister(int regIndex, uint32_t* value) {
     if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
-        printf("Error: invalid register index | %d \n",regIndex);
+        printf("Error: Invalid register index: %d\n", regIndex);
         return;
     }
     *value = registers.registerValue[regIndex];
@@ -47,4 +47,54 @@ int binADecimal(uint32_t op) {
         op = op >> 1;
     }
     return sum;
+}
+
+void getOperandName(uint32_t name) {
+ 
+      if ( (name>>24) == 0x01){
+      // Tipo registro - imprimir nombre del registro
+      char* nameRegister = "UNK";
+      int regIndex = name & 0x0000001F;
+      switch(regIndex) {
+          case 0: nameRegister = "LAR"; break;
+          case 1: nameRegister = "MAR"; break;
+          case 2: nameRegister = "MBR"; break;
+          case 3: nameRegister = "IP"; break;
+          case 4: nameRegister = "OPC"; break;
+          case 5: nameRegister = "OP1"; break;
+          case 6: nameRegister = "OP2"; break;
+          case 7: nameRegister = "UNK"; break;
+          case 8: nameRegister = "UNK"; break;
+          case 9: nameRegister = "UNK"; break;
+          case 10: nameRegister = "EAX"; break;
+          case 11: nameRegister = "EBX"; break;
+          case 12: nameRegister = "ECX"; break;
+          case 13: nameRegister = "EDX"; break;
+          case 14: nameRegister = "EFX"; break;
+          case 15: nameRegister = "AC"; break;
+          case 16: nameRegister = "CC"; break;
+          case 17: nameRegister = "UNK"; break;
+          case 18: nameRegister = "UNK"; break;
+          case 19: nameRegister = "UNK"; break;
+          case 20: nameRegister = "UNK"; break;
+          case 21: nameRegister = "UNK"; break;
+          case 22: nameRegister = "UNK"; break;
+          case 23: nameRegister = "UNK"; break;
+          case 24: nameRegister = "UNK"; break;
+          case 25: nameRegister = "UNK"; break;
+          case 26: nameRegister = "CS"; break;
+          case 27: nameRegister = "DS"; break;
+          case 28: nameRegister = "UNK"; break;
+          case 29: nameRegister = "UNK"; break;
+          case 30: nameRegister = "UNK"; break;
+          case 31: nameRegister = "UNK"; break;
+      }
+      printf("%s", nameRegister);
+    } else if ( (name>>24) == 0x02){
+      // Tipo inmediato 
+      printf("%04X", (uint16_t)(name & 0x0000FFFF));
+    } else {
+      // Tipo memoria - entre [ ]
+      printf("[%06X]", name & 0x00FFFFFF);
+    }
 }
