@@ -16,7 +16,7 @@ void op_sys(uint32_t op1) {
         sys_write();
     } else {
         printf("Error: SYS code invalid: %u\n", op1);
-        writeRegister(3, 0xFFFFFFFF); // Terminar ejecución por error
+        writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
     }
 }
 
@@ -24,8 +24,8 @@ void sys_read() {
     uint32_t eax, edx, ecx;
     
     // Leer registros involucrados
-    getRegister(10, &eax);  // EAX - modo de interpretación
-    getRegister(13, &edx);  // EDX - dirección lógica base
+    getRegister(10, &eax);  // EAX - modo de interpretacion
+    getRegister(13, &edx);  // EDX - direccion logica base
     getRegister(12, &ecx);  // ECX - cantidad y tamaño
     
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
@@ -38,7 +38,7 @@ void sys_read() {
         uint32_t direccion_actual = edx + (i * tamano_celda);
         uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
         
-        // Mostrar prompt con dirección física
+        // Mostrar prompt con direccion fisica
         printf("[%04X]: ", direccion_fisica & 0xFFFF);
         
         if (eax & 0x01) { // Decimal
@@ -107,8 +107,8 @@ void sys_write() {
     uint32_t eax, edx, ecx;
     
     // Leer registros involucrados
-    getRegister(10, &eax);  // EAX - modo de interpretación
-    getRegister(13, &edx);  // EDX - dirección lógica base
+    getRegister(10, &eax);  // EAX - modo de interpretacion
+    getRegister(13, &edx);  // EDX - direccion logica base
     getRegister(12, &ecx);  // ECX - cantidad y tamaño
     
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
@@ -129,7 +129,7 @@ void sys_write() {
             valor |= ((uint32_t)byte << (j * 8));
         }
         
-        // Mostrar prompt con dirección física y valor
+        // Mostrar prompt con direccion fisica y valor
         printf("[%04X]: ", direccion_fisica & 0xFFFF);
         
         if (eax & 0x01) { // Decimal

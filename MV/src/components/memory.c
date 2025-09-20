@@ -6,9 +6,9 @@
 #include <stdint.h>
 #include <math.h>
 
-MainMemory memory;  // definición global, celdas de 8 bits
+MainMemory memory;  // definicion global, celdas de 8 bits
 
-// Función para inicializar la memoria 
+// Funcion para inicializar la memoria 
 void initMemory() {
     // Inicializar toda la memoria con ceros
     memset(memory.data, 0, MEMORY_SIZE);
@@ -17,7 +17,7 @@ void initMemory() {
     printf("Available addresses: 0 to %d\n", MAX_ADDRESS);
 }
 
-// Función para escribir un byte en la memoria
+// Funcion para escribir un byte en la memoria
 int writeByte(int address, uint8_t value) {
     if (!memory.initialized) {
         printf("Error: Memory not initialized\n");
@@ -33,7 +33,7 @@ int writeByte(int address, uint8_t value) {
     return 1;
 }
 
-// Función para leer un byte de la memoria
+// Funcion para leer un byte de la memoria
 int readByte(int address, uint8_t* value) {
     if (!memory.initialized) {
         printf("Error: Memory not initialized\n");
@@ -53,9 +53,9 @@ void memoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint3
     writeRegister(0, *logicalAddress);  //escribimos el LAR
     *physicalAddress = getFisicalAddress(*logicalAddress);
     
-    // MAR: 2 bytes altos = cantidad de bytes (1), 2 bytes bajos = direccion física
+    // MAR: 2 bytes altos = cantidad de bytes (1), 2 bytes bajos = direccion fisica
     uint32_t marValue = (1 << 16) | (*physicalAddress & 0xFFFF);
-    writeRegister(1, marValue);  //escribimos el MAR con cantidad y direccion física
+    writeRegister(1, marValue);  //escribimos el MAR con cantidad y direccion fisica
 }
 
 void getMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress,  uint8_t *opCode) {
@@ -89,8 +89,8 @@ void invertir (uint32_t *valueAux, uint32_t aux){
 
 void readMemory (uint8_t sizeOp, uint32_t *valueAux, uint32_t op) {
     
+    uint8_t value;
     uint32_t aux = 0x00000000;
-    uint32_t value;
     uint32_t logicalAddress;
     uint32_t fisicalAddress;
 

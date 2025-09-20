@@ -17,12 +17,12 @@ void analizeInstruction(uint8_t instruction, uint8_t *op1Bytes, uint8_t *op2Byte
         op2Type = (instruction >> 6) & 0x03;    // bits 7-6 → tipo B
         *op1Bytes = op1Type;
         *op2Bytes = op2Type;
-    } else if ((instruction & 0x0F) != 0x0F) {      // Caso: instrucción con 1 operando
+    } else if ((instruction & 0x0F) != 0x0F) {      // Caso: instruccion con 1 operando
  
         op1Type = (instruction >> 6) & 0x03;    // bits 7-6 → tipo A
         *op1Bytes = op1Type;
         *op2Bytes = 0x0;
-    } else {                                        // Caso: instrucción sin operandos
+    } else {                                        // Caso: instruccion sin operandos
         *op2Bytes = 0x0;
         *op1Bytes = 0x0;
     }
@@ -82,14 +82,14 @@ void initOpTable(void) {
 
 
 /* ejemplo de uso fuera del archivo operations.c
-uint8_t opcode = memoria[ip]; // leíste un byte de memoria que corresponde al opcode
+uint8_t opcode = memoria[ip]; // leiste un byte de memoria que corresponde al opcode
 uint32_t op1 = ...;           // operandos decodificados
 uint32_t op2 = ...;
 
 if (opTable[opcode] != NULL) {
-    opTable[opcode](&cpu, op1, op2); // ejecutás la operación
+    opTable[opcode](&cpu, op1, op2); // ejecutas la operacion
 } else {
-    printf("Instrucción inválida: 0x%02X\n", opcode);
+    printf("Instruccion invalida: 0x%02X\n", opcode);
     // man
  */
 
@@ -104,12 +104,12 @@ void analizeInstruction(uint8_t instruction, uint8_t *op1Bytes, uint8_t *op2Byte
         op2Type = (instruction >> 6) & 0x03;    // bits 7-6 → tipo B
         *op2Bytes = analizeOperator(op2Type);
         *op1Bytes = analizeOperator(op1Type);
-    } else if ((instruction & 0x0F) != 0x0F) {      // Caso: instrucción con 1 operando
+    } else if ((instruction & 0x0F) != 0x0F) {      // Caso: instruccion con 1 operando
  
         op1Type = (instruction >> 6) & 0x03;    // bits 7-6 → tipo A
         *op1Bytes = analizeOperator(op1Type);
         *op2Bytes = 0;
-    } else {                                        // Caso: instrucción sin operandos
+    } else {                                        // Caso: instruccion sin operandos
         *op2Bytes = 0;
         *op1Bytes = 0;
     }
@@ -127,14 +127,14 @@ void analizeInstruction(uint8_t instruction, uint8_t *op1Bytes, uint8_t *op2Byte
         *op2Bytes = analizeOperator(op2Type);
         *op1Bytes = analizeOperator(op1Type);
     }
-    // Caso: instrucción con 1 operando
+    // Caso: instruccion con 1 operando
     else if ((instruction & 0xE0) == 0x00 && (instruction & 0x1F) != 0x00) {  
  
         op2Type = (instruction >> 6) & 0x03; // bits 7-6 → tipo A
         *op2Bytes = analizeOperator(op2Type);
         *op1Bytes = 0;
     }
-    // Caso: instrucción sin operandos
+    // Caso: instruccion sin operandos
     else {
         *op2Bytes = 0;
         *op1Bytes = 0;

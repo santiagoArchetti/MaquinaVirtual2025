@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-// Definir diferentes tipos de punteros a función
+// Definir diferentes tipos de punteros a funcion
 typedef void (*OpFunc0)(void);                    // Sin operandos
 typedef void (*OpFunc1)(uint32_t);                // Un operando
 typedef void (*OpFunc2)(uint32_t, uint32_t);      // Dos operandos

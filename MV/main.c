@@ -9,7 +9,7 @@
 #include "include/segmentTable.h"
 #include "include/directions.h"
 
-// Función para obtener el mnemónico de una instrucción
+// Funcion para obtener el mnemonico de una instruccion
 const char* getInstructionMnemonic(uint8_t opCode, uint8_t op1Bytes, uint8_t op2Bytes) {
         switch(opCode) {
             case 0x10: return "MOV";
@@ -108,7 +108,7 @@ void beginExecution(FILE *file, int debug) {
             uint8_t op1Bytes, op2Bytes;
             analizeInstruction(opCode, &op1Bytes, &op2Bytes);
             
-            // Debug: mostrar información de la instrucción
+            // Debug: mostrar informacion de la instruccion
             if (debug) {
                 printf("[%04X] %02X", IP, opCode);
                 fflush(stdout);
@@ -116,9 +116,9 @@ void beginExecution(FILE *file, int debug) {
             
             uint8_t cleanOpCode = opCode & 0x1F;
             writeRegister(4, cleanOpCode);
+            
+            IP = IP + 1;  // Avanzamos la instruccion
             if (opCodeExists(opCode)){
-
-              IP = IP + 1;  // Avanzamos la instruccion
 
               uint32_t operandA = 0, operandB = 0;
 
@@ -129,12 +129,10 @@ void beginExecution(FILE *file, int debug) {
                 uint8_t TOPE_IP = IP + op2Bytes;
                 while (IP < TOPE_IP) {
                   getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
-                  //uint8_t byteValue;
-                  //readByte(fisicalAddress, &byteValue);
                   bytes2[i] = opCode;
                   if (debug) {
                       printf(" %02X", opCode);
-                  }             
+                  }
                   i++;
                   IP += 1;
                 }
@@ -159,8 +157,6 @@ void beginExecution(FILE *file, int debug) {
 
                 while (IP < TOPE_IP) {
                   getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
-                  // uint8_t byteValue;
-                  // readByte(fisicalAddress, &byteValue);
                   bytes1[i] = opCode;
                   if (debug) {
                       printf(" %02X", opCode);
@@ -180,9 +176,9 @@ void beginExecution(FILE *file, int debug) {
                 writeRegister(6, operandA);
               }
               
-              // Debug: mostrar mnemónico y ejecutar operación
+              // Debug: mostrar mnemonico y ejecutar operacion 
               if (debug) {
-                  // Mostrar mnemónico
+                  // Mostrar mnemonico
                   const char* mnemonic = getInstructionMnemonic(cleanOpCode, op1Bytes, op2Bytes);
                   printf(" | %s", mnemonic);
                   if (op1Bytes > 0 && op2Bytes > 0) {
@@ -198,38 +194,39 @@ void beginExecution(FILE *file, int debug) {
                   if (opTable2[cleanOpCode] != NULL) {  // Dos operandos: operandA (destino), operandB (fuente)
                     opTable2[cleanOpCode](operandA, operandB);
                   } else {
-                    printf("ERROR: Instrucción inválida con 2 operandos: 0x%02X\n", cleanOpCode);
-                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+                    printf("ERROR: Instruccion invalida con 2 operandos: 0x%02X\n", cleanOpCode);
+                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion
                   }
                 } else if (op1Bytes > 0 && op2Bytes == 0) {
                   if (opTable1[cleanOpCode] != NULL) {  // Un operando
                     opTable1[cleanOpCode](operandA);
                   } else {
-                    printf("ERROR: Instrucción inválida con 1 operando: 0x%02X\n", cleanOpCode);
-                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+                    printf("ERROR: Instruccion invalida con 1 operando: 0x%02X\n", cleanOpCode);
+                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion
                   }
                 } else if (op1Bytes == 0 && op2Bytes == 0) {
                   if (opTable0[cleanOpCode] != NULL) {  // Sin operandos
                     opTable0[cleanOpCode]();
                   } else {
-                    printf("ERROR: Instrucción inválida sin operandos: 0x%02X\n", cleanOpCode);
-                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+                    printf("ERROR: Instruccion invalida sin operandos: 0x%02X\n", cleanOpCode);
+                    writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion
                   }
                 }
             } else  // no existe el codigo de operacion
               writeRegister(3,0xFFFFFFFF);
 
         } else {  // Fallo de segmento
-            printf("ERROR: Fallo de segmento - Dirección física 0x%08X inválida\n", fisicalAddress);
-            writeRegister(3, 0xFFFFFFFF); // Terminar ejecución
+            printf("ERROR: Fallo de segmento - Direccion fisica 0x%08X invalida\n", fisicalAddress);
+            writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion
         }
         writeRegister(3, IP);
 
-        // Actualizar IP para la siguiente iteración
+        // Actualizar IP para la siguiente iteracion
         getRegister(3, &IP);
+        /*
         if (debug) {
             printf("IP: %08X\n", IP);
-        }
+        }*/
     }
     
 
@@ -238,9 +235,9 @@ void beginExecution(FILE *file, int debug) {
         printf("===================\n");
     } else {
         if (IP == 0xFFFFFFFF) {
-            printf("=== EJECUCIÓN TERMINADA ===\n");
+            printf("=== EJECUCIoN TERMINADA ===\n");
         } else {
-            printf("=== EJECUCIÓN COMPLETADA - IP fuera del segmento de código ===\n");
+            printf("=== EJECUCIoN COMPLETADA - IP fuera del segmento de codigo ===\n");
         }
     }
 }

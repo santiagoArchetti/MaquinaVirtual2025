@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "../../include/segmentTable.h"
 
-uint32_t getLogicalAddress(uint16_t segment, uint16_t offset) {  //devuelve la dirección lógica (no valida limites)
+uint32_t getLogicalAddress(uint16_t segment, uint16_t offset) {  //devuelve la direccion logica (no valida limites)
     uint32_t logicalAddress = (segment << 16) | offset;
     return logicalAddress;
 }
@@ -17,11 +17,11 @@ uint32_t getFisicalAddress(uint32_t logicalAddress) {
     return fisicalAddress;
 }
     
-int isValidAddress(uint32_t physicalAddress, uint32_t bytesCount, uint16_t segment) { //valida si la dirección física es válida 
+int isValidAddress(uint32_t physicalAddress, uint32_t bytesCount, uint16_t segment) { //valida si la direccion fisica es valida 
     uint16_t base, length;
     getSegmentRange(segment, &base, &length);
 
-    // Validar que la dirección física esté dentro del segmento
+    // Validar que la direccion fisica este dentro del segmento
     if (physicalAddress < base || physicalAddress >= base + length) {
         return 0;
     }

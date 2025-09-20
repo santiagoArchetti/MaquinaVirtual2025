@@ -1,7 +1,7 @@
 #include "../../include/segmentTable.h"
 #include <stdio.h>
 
-SegmentTable segmentTable;  // definición global
+SegmentTable segmentTable;  // definicion global
 
 // Inicializamos en 0 todos los segmentos
 void initSegmentTable() {
@@ -11,7 +11,7 @@ void initSegmentTable() {
     }
 }
 
-// Función para escribir la base de un segmento
+// Funcion para escribir la base de un segmento
 void writeBaseSegment() {
     if (segmentTable.position == 0) {
         // Primer segmento → base = 0 (no modificamos longitud)
@@ -29,13 +29,13 @@ void writeBaseSegment() {
     }
 }
 
-// Función para escribir la longitud de un segmento
+// Funcion para escribir la longitud de un segmento
 void setSegmentDataLength(uint16_t dataLength) {
     if (segmentTable.position >= SEGMENT_TABLE_SIZE) {
         printf("Error: segment table full\n");
         return;
     }
-    // Guardamos solo longitud en la parte baja (base todavía = 0)
+    // Guardamos solo longitud en la parte baja (base todavia = 0)
     segmentTable.segment[segmentTable.position] = (uint32_t)dataLength & 0xFFFF;
     writeBaseSegment();
     segmentTable.position++;  // Avanzar a la siguiente entrada

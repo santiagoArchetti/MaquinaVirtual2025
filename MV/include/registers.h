@@ -13,6 +13,7 @@ extern Registers registers;
 
 void writeRegister(int register, uint32_t value);  
 void getRegister(int register, uint32_t* value);
-void initRegisters();  // función extra para inicializar
-
+void initRegisters();  // funcion extra para inicializar
+int opCodeExists(uint8_t opCode);
+int binADecimal(uint32_t op);
 #endif
