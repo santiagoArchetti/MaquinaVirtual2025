@@ -67,6 +67,8 @@ void op_mov(uint32_t op1, uint32_t op2) {
     // Obtenemos el tamaño del operando 1
     uint8_t sizeOp1 = op1 >> 24;
 
+    printf("op1: %08X, op2: %08X\n", op1, op2);
+
     if ( sizeOp1 == 1 ){                            // Inmediato en el primer operando
         writeRegister(3,0xFFFFFFFF);
     } else {

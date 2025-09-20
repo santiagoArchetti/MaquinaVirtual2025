@@ -113,6 +113,8 @@ void sys_write() {
     
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
+
+    printf("edx: %08X\n", edx);
     
     printf("SYS WRITE - Mode: 0x%02X, Dir: 0x%08X, Cant: %u, Size: %u\n", 
            eax, edx, cantidad, tamano_celda);

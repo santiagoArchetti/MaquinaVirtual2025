@@ -17,5 +17,4 @@ void initMemory();
 int writeByte(int address, uint8_t value);
 int readByte(int address, uint8_t* value);
 void getMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress, uint8_t *opCode);
-void setMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress, uint8_t value);
 #endif

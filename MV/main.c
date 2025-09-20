@@ -141,16 +141,20 @@ void beginExecution(FILE *file, int debug) {
               }
               
               if (op2Bytes == 1) {
+
+                //operandB = op2Bytes << 24 | bytes[0];
                 operandB = bytes[0];
-                writeRegister(6, operandB);
               } else if (op2Bytes == 2) {
+                //operandB = op2Bytes << 24 | (bytes[0] << 8) | bytes[1];
                 operandB = (bytes[0] << 8) | bytes[1];
-                writeRegister(6, operandB);
               } else if (op2Bytes == 3) {
+                //operandB = op2Bytes << 24 | (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
                 operandB = (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
-                writeRegister(6, operandB);
               }
-            }  
+              printf("\noperandB: %08X\n", operandB);
+              writeRegister(6, operandB);
+            }
+
 
             
               
@@ -172,15 +176,17 @@ void beginExecution(FILE *file, int debug) {
               }
               
               if (op1Bytes == 1) {
+                //operandA = op1Bytes << 24 | bytes[0];
                 operandA = bytes[0];
-                writeRegister(5, operandA);
               } else if (op1Bytes == 2) {
+                //operandA = op1Bytes << 24 | (bytes[0] << 8) | bytes[1];
                 operandA = (bytes[0] << 8) | bytes[1];
-                writeRegister(5, operandA);
               } else if (op1Bytes == 3) {
+                //operandA = op1Bytes << 24 | (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
                 operandA = (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
-                writeRegister(5, operandA);
               }
+              printf("\noperandA: %08X\n", operandA);
+              writeRegister(5, operandA);
             }
             
             // Debug: mostrar mnemónico y ejecutar operación
