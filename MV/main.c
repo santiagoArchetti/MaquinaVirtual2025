@@ -122,6 +122,7 @@ void beginExecution(FILE *file, int debug) {
 
             uint32_t operandA = 0, operandB = 0;
 
+
             if (op2Bytes > 0) {
               uint8_t bytes[3] = {0};
               int i = 0;
