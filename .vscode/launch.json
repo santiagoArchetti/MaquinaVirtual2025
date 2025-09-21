@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "c:/Santiago/Estudio/ADLC/MV/MaquinaVirtual2025/MV",
-      "program": "c:/Santiago/Estudio/ADLC/MV/MaquinaVirtual2025/MV/build/Debug/outDebug",
+      "cwd": "c:/Users/heyna/MaquinaVirtual2025/MV/src/functions",
+      "program": "c:/Users/heyna/MaquinaVirtual2025/MV/src/functions/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [

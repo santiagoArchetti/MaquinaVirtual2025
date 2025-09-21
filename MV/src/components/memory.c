@@ -48,28 +48,28 @@ int readByte(int address, uint8_t* value) {
     return 1;
 }
 
-void memoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress) {
+void memoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress, uint8_t size) {
     *logicalAddress = getLogicalAddress(csValue, IP);
     writeRegister(0, *logicalAddress);  //escribimos el LAR
     *physicalAddress = getFisicalAddress(*logicalAddress);
     
     // MAR: 2 bytes altos = cantidad de bytes (1), 2 bytes bajos = direccion fisica
-    uint32_t marValue = (1 << 16) | (*physicalAddress & 0xFFFF);
+    uint32_t marValue = (size << 16) | (*physicalAddress & 0xFFFF);
     writeRegister(1, marValue);  //escribimos el MAR con cantidad y direccion fisica
 }
 
-void getMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress,  uint8_t *opCode) {
+void getMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress,  uint8_t *opCode, uint8_t size) {
     
-    memoryAccess(csValue, IP, logicalAddress, physicalAddress);
+    memoryAccess(csValue, IP, logicalAddress, physicalAddress, size);
 
+    readByte(*physicalAddress, opCode); // leo byte desde memoria
     writeRegister(2, *opCode);  //escribimos el opCode en el MBR
-    readByte(*physicalAddress, opCode);
 
 }
 
-void setMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress,  uint8_t value) {
+void setMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress,  uint8_t value, uint8_t size) {
 
-    memoryAccess(csValue, IP, logicalAddress, physicalAddress);
+    memoryAccess(csValue, IP, logicalAddress, physicalAddress, size);
 
     writeRegister(2, value);
     writeByte(*physicalAddress, value);
@@ -78,53 +78,52 @@ void setMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, ui
 
 /*------------------- Funciones auxiliares -----------------*/
 
-void invertir (uint32_t *valueAux, uint32_t aux){
-    
-    for (int i = 0; i < 3; i++){        // Invierte el valor leido de la memoria big-endian
-        *valueAux = aux & 0x000000FF;
-        *valueAux = (*valueAux) << 8;
-        aux = aux >> 8;
-    }
-}
-
 void readMemory (uint8_t sizeOp, uint32_t *valueAux, uint32_t op) {
     
-    uint8_t value;
+    uint8_t value = 0;
     uint32_t aux = 0x00000000;
     uint32_t logicalAddress;
     uint32_t fisicalAddress;
+    uint32_t csValue;
 
-    getMemoryAccess(26, op, &logicalAddress, &fisicalAddress, &value); // 26 porque el registro 26 es el CS
+    getRegister(26, &csValue); // obtengo valor del registro CS
 
+    aux = 0;
     for (int i = 0; i < sizeOp ; i++) { // Lectura de memoria
-        aux = aux | value;
-        aux = aux << 8;
+        getMemoryAccess(csValue, op, &logicalAddress, &fisicalAddress, &value, sizeOp);  // leo un byte en posiicon op en dir logica
+        aux = aux << 8 | (uint32_t) value; // acumulo ya ordenado (para no invertir)
         op += 1;
-        getMemoryAccess(26, op, &logicalAddress, &fisicalAddress, &value);  // 26 porque el registro 26 es el CS
     }
-    invertir(valueAux, aux);
+
+    *valueAux = aux;
 }
 
 void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
 
-    uint32_t value;
+    uint8_t value;
     uint32_t logicalAddress;
     uint32_t fisicalAddress;
+    uint32_t csValue;
 
-    for (int i = 0; i < sizeOp ; i++) {
-        value = (uint8_t) (aux | 0x00);
-        aux = aux >> 8;
-        setMemoryAccess(26, op, &logicalAddress, &fisicalAddress, value);
+    getRegister(26, &csValue); // obtengo valor del registro
+
+    for (int i = sizeOp - 1; i >= 0; i--) {
+        value = (uint8_t) ((aux >> (8 * i)) & 0xFF); // para guardar primero bye + signif
+        setMemoryAccess(csValue, op, &logicalAddress, &fisicalAddress, value, sizeOp);
         op += 1;
     }
 }
 
 void setCondicion(uint32_t value) {
-    if (value == 0)
-        writeRegister(17, 0x00000001);         // Setteamos el bit 0 (Z = 1)
-    else 
-        if (value < 0)
-            writeRegister(17, 0x00000002);     // Setteamos el bit 1 (N = 1)
-        else
-            writeRegister(17, 0x00000000);     // Apagamos los bits si es positivo
+
+    int32_t signedValue = (int32_t) value; //para interpretar el signo
+    uint32_t cc = 0;
+
+    uint32_t Z = (signedValue == 0) ? 1 : 0; // Z va a ser 1 si el valor es 0
+    uint32_t N = (signedValue < 0) ? 1 : 0; // N va a ser 1 si el valor es negativo
+
+    // Guardo en bits mas significativos del registro CC
+    cc = (N << 31) | (Z << 30);
+
+    writeRegister(17, cc);
 }

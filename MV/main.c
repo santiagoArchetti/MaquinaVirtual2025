@@ -72,7 +72,7 @@ void beginExecution(FILE *file, int debug) {
 
     while (IP < baseCodeSegment + codeSegmentValueLength && IP >= baseCodeSegment && IP != 0xFFFFFFFF) {
 
-        getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
+        getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode,1);
         
         if (isValidAddress(fisicalAddress, 1, csValue)) {
             readByte(fisicalAddress, &opCode);
@@ -100,7 +100,7 @@ void beginExecution(FILE *file, int debug) {
 
                 uint8_t TOPE_IP = IP + op2Bytes;
                 while (IP < TOPE_IP) {
-                  getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
+                  getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode,1);
                   bytes2[i] = opCode;
                   if (debug) {
                       printf(" %02X", opCode);
@@ -128,7 +128,7 @@ void beginExecution(FILE *file, int debug) {
                 uint8_t TOPE_IP = IP + op1Bytes;
 
                 while (IP < TOPE_IP) {
-                  getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode);
+                  getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode,1);
                   bytes1[i] = opCode;
                   if (debug) {
                       printf(" %02X", opCode);
