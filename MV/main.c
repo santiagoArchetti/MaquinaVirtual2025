@@ -227,7 +227,7 @@ void beginExecution(FILE *file, int debug) {
             printf("==========================================\n");
         } else {
             printf("==========================================\n");
-            printf("        EXECUTION COMPLETED - IP          \n");
+            printf("        EXECUTION TERMINATED - IP          \n");
             printf("          outside code segment             \n");
             printf("==========================================\n");
         }
