@@ -94,7 +94,32 @@ void getOperandName(uint32_t name) {
       // Tipo inmediato 
       printf("%04X", (uint16_t)(name & 0x0000FFFF));
     } else {
-      // Tipo memoria - entre [ ]
-      printf("[%06X]", name & 0x00FFFFFF);
+      // Tipo memoria - extraer registro y offset
+      uint8_t regIndex = (name >> 16) & 0xFF;  // Segundo byte más significativo
+      uint16_t offset = name & 0xFFFF;         // Dos bytes menos significativos
+      
+      // Obtener nombre del registro
+      char* regName = "UNK";
+      switch(regIndex) {
+          case 0: regName = "LAR"; break;
+          case 1: regName = "MAR"; break;
+          case 2: regName = "MBR"; break;
+          case 3: regName = "IP"; break;
+          case 4: regName = "OPC"; break;
+          case 5: regName = "OP1"; break;
+          case 6: regName = "OP2"; break;
+          case 10: regName = "EAX"; break;
+          case 11: regName = "EBX"; break;
+          case 12: regName = "ECX"; break;
+          case 13: regName = "EDX"; break;
+          case 14: regName = "EFX"; break;
+          case 15: regName = "AC"; break;
+          case 16: regName = "CC"; break;
+          case 26: regName = "CS"; break;
+          case 27: regName = "DS"; break;
+          default: regName = "UNK"; break;
+      }
+      
+      printf("[%s+%04X]", regName, offset);
     }
 }
