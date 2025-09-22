@@ -202,7 +202,13 @@ void beginExecution(FILE *file, int debug) {
             printf("ERROR: Fallo de segmento - Direccion fisica 0x%08X invalida\n", fisicalAddress);
             writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion
         }
-        writeRegister(3, IP);
+        
+        // Verificar si se estableció terminación antes de sobrescribir IP
+        uint32_t currentIP;
+        getRegister(3, &currentIP);
+        if (currentIP != 0xFFFFFFFF) {
+            writeRegister(3, IP);  // Solo actualizar IP si no es terminación
+        }
 
         // Actualizar IP para la siguiente iteracion
         getRegister(3, &IP);
