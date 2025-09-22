@@ -34,8 +34,14 @@ void op_mov(uint32_t op1, uint32_t op2) {
             
             uint32_t logicalAddress;
             uint32_t fisicalAddress;
-
-            setMemoryAccess(26, op1, &logicalAddress, &fisicalAddress, op2); //ver
+            uint8_t firstByte;
+            uint8_t secondByte;
+            firstByte = (op2 >> 8) & 0xFF;
+            writeRegister(2, (uint32_t)firstByte); //escribimos el dato en el mbr
+            setMemoryAccess(26, op1, &logicalAddress, &fisicalAddress); 
+            secondByte = op2 & 0xFF; 
+            writeRegister(2, (uint32_t)secondByte); //escribimos el dato en el mbr
+            setMemoryAccess(26, op1, &logicalAddress, &fisicalAddress); 
 
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
 
