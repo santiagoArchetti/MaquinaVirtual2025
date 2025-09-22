@@ -106,17 +106,16 @@ void readMemory (uint8_t sizeOp, uint32_t *valueAux, uint32_t op) {
      uint16_t offset = op & 0xFFFF;                
     
 
-    // Leer bytes de memoria desde la dirección calculada
-    for (int i = 0; i < sizeOp; i++ ) {
+    // Siempre leer 4 bytes de memoria (big-endian)
+    for (int i = 0; i < 4; i++ ) {
         getMemoryAccess(segmentRegister, offset + i, &logicalAddress, &fisicalAddress);
         if (isValidAddress(fisicalAddress, 1, segmentRegister)) {
             uint32_t mbrValue;
             getRegister(2, &mbrValue);
             value = (uint8_t)(mbrValue & 0xFF);
-            aux = aux | (value << ((sizeOp - 1 - i) * 8));  // aux = (byte1 << 16) | (byte2 << 8) | (byte3) big Endian
+            aux = aux | (value << ((4 - 1 - i) * 8));  // aux = (byte1 << 24) | (byte2 << 16) | (byte3 << 8) | byte4 big Endian
             printf("Read byte: %d, value: %d, fisicalAddress: %d\n", i, value, fisicalAddress);
         }else{
-            printf("Error: Invalid address, segmentRegister: %d, offset: %d, logicalAddress: %d, fisicalAddress: %d\n", segmentRegister, offset, logicalAddress, fisicalAddress);
             writeRegister(3,0xFFFFFFFF);
             return;
         }
@@ -131,6 +130,7 @@ void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
     uint8_t value;
     uint32_t logicalAddress;
     uint32_t fisicalAddress;
+    uint32_t valueToWrite;
 
     
     uint8_t extractedByte = (op >> 16) & 0xFF;
@@ -139,9 +139,26 @@ void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
     uint16_t segmentRegister = (uint16_t)(registerValue >> 16);
     uint16_t offset = op & 0xFFFF;  
     
-    // Escribir bytes en memoria desde la dirección calculada
-    for (int i = 0; i < sizeOp; i++) {
-        value = (uint8_t) ((aux >> ((sizeOp - 1 - i) * 8)) & 0xFF);  // value = big Endian, se hacen SizeOp accesos de memoria
+    // Determinar el valor a escribir según el tipo de operando
+    uint8_t operandType = (aux >> 24) & 0xFF;  // Extraer tipo del byte más significativo
+    
+    if (operandType == 1) {
+        // Registro: quitar byte de tipo, usar solo los 3 bytes menos significativos
+        valueToWrite = aux & 0x00FFFFFF;
+    } else if (operandType == 2) {
+        // Inmediato: solo 16 bits válidos, rellenar con ceros los 16 bits altos
+        valueToWrite = aux & 0x0000FFFF;
+    } else if (operandType == 3) {
+        // Memoria: similar a inmediato, rellenar con ceros los bits altos
+        valueToWrite = aux & 0x00FFFFFF;  // Quitar solo el byte de tipo
+    } else {
+        // Valor sin tipo específico, usar tal como está
+        valueToWrite = aux;
+    }
+    
+    // Siempre escribir 4 bytes en memoria (big-endian)
+    for (int i = 0; i < 4; i++) {
+        value = (uint8_t) ((valueToWrite >> ((4 - 1 - i) * 8)) & 0xFF);  // big Endian
         setMemoryAccess(segmentRegister, offset + i, &logicalAddress, &fisicalAddress);
         if (isValidAddress(fisicalAddress, 1, segmentRegister)) {
             writeByte(fisicalAddress, value);
