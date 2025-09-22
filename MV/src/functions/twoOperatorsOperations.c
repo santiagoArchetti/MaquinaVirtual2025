@@ -14,6 +14,7 @@ void op_mov(uint32_t op1, uint32_t op2) {
     // Obtenemos el tamaño del operando 1
     uint8_t sizeOp1 = op1 >> 24;
 
+
     if ( sizeOp1 == 2 ){                            // Inmediato en el primer operando
         writeRegister(3,0xFFFFFFFF);
     } else {
@@ -79,8 +80,9 @@ void op_add(uint32_t op1, uint32_t op2) {
     
         } else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2 & 0x00FFFFFF;        // Para generalizar setCondicion
-            writeRegister(reg1, a + b);
+            b = op2 & 0xFFFF;         // Para generalizar setCondicion
+            uint32_t suma = a + b;
+            writeRegister(reg1, suma);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
@@ -658,7 +660,8 @@ void op_ldh(uint32_t op1, uint32_t op2) {
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
             b = op2;        // Para generalizar setCondicion
-            writeRegister(reg1, (a & 0x0000FFFF) | (b & 0xFFFF0000));
+
+            writeRegister(reg1, (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);

@@ -31,7 +31,7 @@ void sys_read() {
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
     
-    printf("SYS READ | Dir: 0x%08X | Count: %u | Size: %u\n", 
+    printf("SYS READ | Dir: 0x%08X | Count: %u | Size: %04X\n", 
            eax, edx, cantidad, tamano_celda);
     
     for (int i = 0; i < cantidad; i++) {
@@ -39,15 +39,15 @@ void sys_read() {
         uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
         
         // Mostrar prompt con direccion fisica
-        printf("[%04X]: ", direccion_fisica & 0xFFFF);
+        printf("[%04X]: ", edx & 0xFFFF);
         
         if (eax & 0x01) { // Decimal
             int32_t valor;
             scanf("%d", &valor);
             
-            // Escribir valor en memoria (little-endian)
+            // Escribir valor en memoria (big-endian)
             for (int j = 0; j < tamano_celda && j < 4; j++) {
-                uint8_t byte = (valor >> (j * 8)) & 0xFF;
+                uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
                 writeByte(direccion_fisica + j, byte);
             }
             
@@ -113,24 +113,24 @@ void sys_write() {
     
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
-    
-    printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %u\n", 
-           eax, edx, cantidad, tamano_celda);
-    
+
+    printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %04X\n", 
+           edx, cantidad, tamano_celda);
+ 
     for (int i = 0; i < cantidad; i++) {
         uint32_t direccion_actual = edx + (i * tamano_celda);
         uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
         
-        // Leer valor de memoria (little-endian)
+        // Leer valor de memoria (big-endian)
         uint32_t valor = 0;
         for (int j = 0; j < tamano_celda && j < 4; j++) {
             uint8_t byte;
             readByte(direccion_fisica + j, &byte);
-            valor |= ((uint32_t)byte << (j * 8));
+            valor |= ((uint32_t)byte << ((tamano_celda - 1 - j) * 8));
         }
         
         // Mostrar prompt con direccion fisica y valor
-        printf("[%04X]: ", direccion_fisica & 0xFFFF);
+        printf("[%04X]: ", edx & 0xFFFF);
         
         if (eax & 0x01) { // Decimal
             printf("%d\n", (int32_t)valor);

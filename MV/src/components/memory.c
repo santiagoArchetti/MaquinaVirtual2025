@@ -114,7 +114,6 @@ void readMemory (uint8_t sizeOp, uint32_t *valueAux, uint32_t op) {
             getRegister(2, &mbrValue);
             value = (uint8_t)(mbrValue & 0xFF);
             aux = aux | (value << ((4 - 1 - i) * 8));  // aux = (byte1 << 24) | (byte2 << 16) | (byte3 << 8) | byte4 big Endian
-            printf("Read byte: %d, value: %d, fisicalAddress: %d\n", i, value, fisicalAddress);
         }else{
             writeRegister(3,0xFFFFFFFF);
             return;
@@ -162,7 +161,6 @@ void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
         setMemoryAccess(segmentRegister, offset + i, &logicalAddress, &fisicalAddress);
         if (isValidAddress(fisicalAddress, 1, segmentRegister)) {
             writeByte(fisicalAddress, value);
-            printf("Write byte: %d, value: %d, fisicalAddress: %d\n", i, value, fisicalAddress);
         }else{
             printf("Error: Invalid address\n");
             writeRegister(3,0xFFFFFFFF);
