@@ -209,7 +209,6 @@ void beginExecution(FILE *file, int debug) {
         if (currentIP != 0xFFFFFFFF) {
             writeRegister(3, IP);  // Solo actualizar IP si no es terminación
         }
-
         // Actualizar IP para la siguiente iteracion
         getRegister(3, &IP);
     }

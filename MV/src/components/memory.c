@@ -59,7 +59,6 @@ void memoryAccess(uint32_t SegmentValue, uint32_t OffsetValue, uint32_t *logical
     writeRegister(1, marValue);  //escribimos el MAR con cantidad y direccion fisica
 }
 
-
 //setea configuracion de memoria para lectura, y guarda el dato leido en el MBR
 void getMemoryAccess(uint32_t SegmentValue, uint32_t OffsetValue, uint32_t *logicalAddress, uint32_t *physicalAddress) {
 
@@ -105,10 +104,10 @@ void readMemory (uint8_t sizeOp, uint32_t *valueAux, uint32_t op) {
      uint16_t segmentRegister = (uint16_t)(registerValue >> 16);
      uint16_t offset = op & 0xFFFF;                
     
-
     // Siempre leer 4 bytes de memoria (big-endian)
     for (int i = 0; i < 4; i++ ) {
         getMemoryAccess(segmentRegister, offset + i, &logicalAddress, &fisicalAddress);
+
         if (isValidAddress(fisicalAddress, 1, segmentRegister)) {
             uint32_t mbrValue;
             getRegister(2, &mbrValue);
@@ -122,8 +121,6 @@ void readMemory (uint8_t sizeOp, uint32_t *valueAux, uint32_t op) {
     *valueAux = aux;
 }
 
-
-
 void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
 
     uint8_t value;
@@ -131,16 +128,15 @@ void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
     uint32_t fisicalAddress;
     uint32_t valueToWrite;
 
-    
     uint8_t extractedByte = (op >> 16) & 0xFF;
     uint32_t registerValue;
-    getRegister(extractedByte, &registerValue);  
+    getRegister(binADecimal(extractedByte), &registerValue);  
     uint16_t segmentRegister = (uint16_t)(registerValue >> 16);
     uint16_t offset = op & 0xFFFF;  
     
     // Determinar el valor a escribir según el tipo de operando
-    uint8_t operandType = (aux >> 24) & 0xFF;  // Extraer tipo del byte más significativo
-    
+    //uint8_t operandType = (aux >> 24) & 0xFF;  // Extraer tipo del byte más significativo
+    /*
     if (operandType == 1) {
         // Registro: quitar byte de tipo, usar solo los 3 bytes menos significativos
         valueToWrite = aux & 0x00FFFFFF;
@@ -153,11 +149,16 @@ void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
     } else {
         // Valor sin tipo específico, usar tal como está
         valueToWrite = aux;
+    }*/
+    if (sizeOp == 1){
+        valueToWrite = aux & 0x00FFFFFF;
+    }else{
+        valueToWrite = aux;
     }
-    
     // Siempre escribir 4 bytes en memoria (big-endian)
     for (int i = 0; i < 4; i++) {
         value = (uint8_t) ((valueToWrite >> ((4 - 1 - i) * 8)) & 0xFF);  // big Endian
+        writeRegister(2,value);
         setMemoryAccess(segmentRegister, offset + i, &logicalAddress, &fisicalAddress);
         if (isValidAddress(fisicalAddress, 1, segmentRegister)) {
             writeByte(fisicalAddress, value);

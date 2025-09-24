@@ -29,21 +29,21 @@ void op_mov(uint32_t op1, uint32_t op2) {
 
         } else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             
-            writeRegister(reg1,op2);
+            writeRegister(reg1,op2 & 0xFFFF);
 
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             
-            // Usar writeMemory para ser consistente con el resto del código
-            writeMemory(2, op2, op1); 
+            writeMemory(2, op2 & 0xFFFF, op1); 
 
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
 
             uint32_t value;
-            uint32_t aux;
+            //uint32_t aux;
 
             getRegister(reg2, &value);
-            invertir(&aux, value);
-            writeMemory(sizeOp1, aux, op1);
+            //printf(" VALOR: %08x", value);
+            //invertir(&aux, value);
+            writeMemory(sizeOp1, value, op1);
 
         } else {
             
@@ -86,7 +86,7 @@ void op_add(uint32_t op1, uint32_t op2) {
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2 & 0x00FFFFFF;       // La mascara es para sacarle el codigo de operando
+            b = op2 & 0xFFFF;       // La mascara es para sacarle el codigo de operando
             writeMemory(sizeOp1, a + b, op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
@@ -122,34 +122,34 @@ void op_sub(uint32_t op1, uint32_t op2) {
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
             getRegister(reg1, &a);
             getRegister(reg2, &b);
-            writeRegister(reg1, b - a);
+            writeRegister(reg1, a - b);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
-            writeRegister(reg1, b - a);
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
+            writeRegister(reg1, a - b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
-            writeMemory(sizeOp1, b - a, op1);
+            b = op2 & 0xFFFF;
+            writeMemory(sizeOp1, a - b, op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
             readMemory(sizeOp1, &a, op1);
             getRegister(reg2, &b);
-            writeMemory(sizeOp1,  b - a, op1);
+            writeMemory(sizeOp1,  a - b, op1);
 
         } else if ( sizeOp1 == 3 && sizeOp2 == 3 ){     // Memoria a memoria
             readMemory(sizeOp1, &a, op1);
             readMemory(sizeOp2, &b, op2);
-            writeMemory(sizeOp1,  b - a, op1);
+            writeMemory(sizeOp1,  a - b, op1);
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
             getRegister(reg1, &a);
             readMemory(sizeOp2, &b, op2);
-            writeRegister(op1,  b - a);
+            writeRegister(op1,  a - b);
         }
-        setCondicion(b - a);
+        setCondicion(a - b);
     }
 }
 
@@ -171,12 +171,12 @@ void op_mul(uint32_t op1, uint32_t op2) {
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
             writeRegister(reg1, b * a);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
+            b = op2 & 0xFFFF;
             writeMemory(sizeOp1, b * a, op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
@@ -212,34 +212,49 @@ void op_div(uint32_t op1, uint32_t op2) {
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
             getRegister(reg1, &a);
             getRegister(reg2, &b);
-            writeRegister(reg1, b / a);
-    
+            if (b != 0)
+                writeRegister(reg1, a / b);
+            else
+                writeRegister(3,0xFFFFFFFF);
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
-            writeRegister(reg1, b / a);
-    
-        } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
+            if (b != 0)
+                writeRegister(reg1, a / b);
+            else
+                writeRegister(3,0xFFFFFFFF);
+        
+            } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
-            writeMemory(sizeOp1, b / a, op1);
-    
+            b = op2 & 0xFFFF;
+            if (b != 0)
+                writeMemory(sizeOp1, a / b, op1);
+            else
+                writeRegister(3,0xFFFFFFFF);
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
             readMemory(sizeOp1, &a, op1);
             getRegister(reg2, &b);
-            writeMemory(sizeOp1,  b / a, op1);
-
+            if (b != 0)
+                writeMemory(sizeOp1,  a / b, op1);
+            else
+                writeRegister(3,0xFFFFFFFF);
         } else if ( sizeOp1 == 3 && sizeOp2 == 3 ){     // Memoria a memoria
             readMemory(sizeOp1, &a, op1);
             readMemory(sizeOp2, &b, op2);
-            writeMemory(sizeOp1,  b / a, op1);
-            
+            if (b != 0)
+                writeMemory(sizeOp1,  a / b, op1);
+            else
+                writeRegister(3,0xFFFFFFFF);
+
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
             getRegister(reg1, &a);
             readMemory(sizeOp2, &b, op2);
-            writeRegister(reg1,  b / a);
+            if (b != 0)
+                writeRegister(reg1,  a / b);
+            else
+                writeRegister(3,0xFFFFFFFF);
         }
-        setCondicion(b / a);
+        setCondicion(a / b);
         writeRegister(16, b % a);   // Guardamos el resto de la division en AC
     }
 }
@@ -261,11 +276,11 @@ void op_cmp(uint32_t op1, uint32_t op2) {
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
+            b = op2 & 0xFFFF;
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
             readMemory(sizeOp1, &a, op1);
@@ -279,7 +294,7 @@ void op_cmp(uint32_t op1, uint32_t op2) {
             getRegister(reg1, &a);
             readMemory(sizeOp2, &b, op2);
         }
-        setCondicion(b - a);
+        setCondicion(a - b);
     }
 }
 
@@ -301,12 +316,12 @@ void op_shl(uint32_t op1, uint32_t op2) {
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
             writeRegister(reg1, a << b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
+            b = op2 & 0xFFFF;
             writeMemory(sizeOp1, a << b, op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
@@ -346,12 +361,12 @@ void op_shr(uint32_t op1, uint32_t op2) {
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
             writeRegister(reg1, a >> b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
+            b = op2 & 0xFFFF;
             writeMemory(sizeOp1, a >> b, op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
@@ -372,7 +387,7 @@ void op_shr(uint32_t op1, uint32_t op2) {
         setCondicion(a >> b);
     }
 }
-// Iguales -- Ver
+
 void op_sar(uint32_t op1, uint32_t op2) {
 
     uint8_t sizeOp1 = op1 >> 24;
@@ -391,12 +406,12 @@ void op_sar(uint32_t op1, uint32_t op2) {
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
             writeRegister(reg1, a >> b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
+            b = op2 & 0xFFFF;
             writeMemory(sizeOp1, a >> b, op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
@@ -436,12 +451,12 @@ void op_and(uint32_t op1, uint32_t op2) {
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
             writeRegister(reg1, a & b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
+            b = op2 & 0xFFFF;
             writeMemory(sizeOp1, a & b, op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
@@ -481,12 +496,12 @@ void op_or(uint32_t op1, uint32_t op2) {
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
             writeRegister(reg1, a | b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
+            b = op2 & 0xFFFF;
             writeMemory(sizeOp1, a | b, op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
@@ -526,12 +541,12 @@ void op_xor(uint32_t op1, uint32_t op2) {
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
             writeRegister(reg1, a ^ b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
+            b = op2 & 0xFFFF;
             writeMemory(sizeOp1, a ^ b, op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
@@ -612,12 +627,12 @@ void op_ldl(uint32_t op1, uint32_t op2) {
             
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
             writeRegister(reg1, (a & 0xFFFF0000) | (b & 0x0000FFFF));
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
+            b = op2 & 0xFFFF;
             writeMemory(sizeOp1, (a & 0xFFFF0000) | (b & 0x0000FFFF), op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
@@ -659,13 +674,13 @@ void op_ldh(uint32_t op1, uint32_t op2) {
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
-            b = op2;        // Para generalizar setCondicion
+            b = op2 & 0xFFFF;        // Para generalizar setCondicion
 
             writeRegister(reg1, (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
-            b = op2;
+            b = op2 & 0xFFFF;
             writeMemory(sizeOp1, (a & 0x0000FFFF) | (b & 0xFFFF0000), op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria

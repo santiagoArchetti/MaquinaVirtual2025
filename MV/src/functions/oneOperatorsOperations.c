@@ -25,8 +25,8 @@ void sys_read() {
     
     // Leer registros involucrados
     getRegister(10, &eax);  // EAX - modo de interpretacion
-    getRegister(13, &edx);  // EDX - direccion logica base
     getRegister(12, &ecx);  // ECX - cantidad y tamaño
+    getRegister(13, &edx);  // EDX - direccion logica base
     
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
@@ -108,8 +108,8 @@ void sys_write() {
     
     // Leer registros involucrados
     getRegister(10, &eax);  // EAX - modo de interpretacion
-    getRegister(13, &edx);  // EDX - direccion logica base
     getRegister(12, &ecx);  // ECX - cantidad y tamaño
+    getRegister(13, &edx);  // EDX - direccion logica base
     
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
@@ -165,8 +165,8 @@ void sys_write() {
 
 /* --------------------- JUMPS ------------------------ */
 void op_jmp(uint32_t op1) {
-    printf("JMP: Jumping to address: %u\n", op1);
     writeRegister(3, op1); // Actualizar IP
+    printf("JMP: Jumping to address: %04x\n", op1 & 0xFFFF);
 }
 
 void op_jz(uint32_t op1) {
