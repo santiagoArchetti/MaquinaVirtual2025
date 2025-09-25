@@ -74,6 +74,9 @@ void beginExecution(FILE *file, int debug) {
 
         getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress);
         
+        // Guardar IP antes de ejecutar la operación
+        uint32_t IPBeforeExecution = IP;
+        
         if (isValidAddress(fisicalAddress, 1, csValue)) {
             uint32_t mbrValue;
             getRegister(2, &mbrValue); //trae el dato del mbr
@@ -92,6 +95,7 @@ void beginExecution(FILE *file, int debug) {
             writeRegister(4, cleanOpCode);
             
             IP = IP + 1;  // Avanzamos la instruccion
+            
             if (opCodeExists(opCode)){
 
               uint32_t operandA = 0, operandB = 0;
@@ -206,11 +210,19 @@ void beginExecution(FILE *file, int debug) {
         // Verificar si se estableció terminación antes de sobrescribir IP
         uint32_t currentIP;
         getRegister(3, &currentIP);
+        
+        // Solo actualizar IP si no es terminación Y si no cambió durante la ejecución
         if (currentIP != 0xFFFFFFFF) {
-            writeRegister(3, IP);  // Solo actualizar IP si no es terminación
+            // Si el IP no cambió durante la ejecución, actualizarlo normalmente
+            if (currentIP == IPBeforeExecution) {
+                writeRegister(3, IP);
+            }
+            // Si cambió (por ejemplo, en un salto), mantener el nuevo valor
         }
+        
         // Actualizar IP para la siguiente iteracion
         getRegister(3, &IP);
+        printf("[%04X]\n", IP);
     }
     
 
