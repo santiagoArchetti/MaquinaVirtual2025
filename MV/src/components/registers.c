@@ -120,7 +120,16 @@ void getOperandName(uint32_t name) {
           case 27: regName = "DS"; break;
           default: regName = "UNK"; break;
       }
-      
-      printf("[%s+%04X]", regName, offset);
+      printf("[%s + %04X]", regName, offset);
     }
+}
+
+void setCondicion(uint32_t value) {
+    if (value == 0)
+        writeRegister(17, 0x00000001);         // Setteamos el bit 0 (Z = 1)
+    else 
+        if (value < 0)
+            writeRegister(17, 0x00000002);     // Setteamos el bit 1 (N = 1)
+        else
+            writeRegister(17, 0x00000000);     // Apagamos los bits si es positivo
 }

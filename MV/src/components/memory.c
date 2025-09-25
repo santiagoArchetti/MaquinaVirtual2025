@@ -49,7 +49,6 @@ int readByte(int address, uint8_t* value) {
     return 1;
 }
 
-
 //Seteo del MAR y LAR 
 void memoryAccess(uint32_t SegmentValue, uint32_t OffsetValue, uint32_t *logicalAddress, uint32_t *physicalAddress) {
     *logicalAddress = getLogicalAddress(SegmentValue, OffsetValue);
@@ -77,7 +76,6 @@ void setMemoryAccess(uint32_t SegmentValue, uint32_t OffsetValue, uint32_t *logi
     uint8_t value = (uint8_t)(mbrValue & 0xFF);
     writeByte(*physicalAddress, value);
 }
-
 
 /*------------------- Funciones auxiliares -----------------*/
 
@@ -134,22 +132,6 @@ void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
     uint16_t segmentRegister = (uint16_t)(registerValue >> 16);
     uint16_t offset = op & 0xFFFF;  
     
-    // Determinar el valor a escribir según el tipo de operando
-    //uint8_t operandType = (aux >> 24) & 0xFF;  // Extraer tipo del byte más significativo
-    /*
-    if (operandType == 1) {
-        // Registro: quitar byte de tipo, usar solo los 3 bytes menos significativos
-        valueToWrite = aux & 0x00FFFFFF;
-    } else if (operandType == 2) {
-        // Inmediato: solo 16 bits válidos, rellenar con ceros los 16 bits altos
-        valueToWrite = aux & 0x0000FFFF;
-    } else if (operandType == 3) {
-        // Memoria: similar a inmediato, rellenar con ceros los bits altos
-        valueToWrite = aux & 0x00FFFFFF;  // Quitar solo el byte de tipo
-    } else {
-        // Valor sin tipo específico, usar tal como está
-        valueToWrite = aux;
-    }*/
     if (sizeOp == 1){
         valueToWrite = aux & 0x00FFFFFF;
     }else{
@@ -168,14 +150,4 @@ void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
             return;
         }
     }
-}
-
-void setCondicion(uint32_t value) {
-    if (value == 0)
-        writeRegister(17, 0x00000001);         // Setteamos el bit 0 (Z = 1)
-    else 
-        if (value < 0)
-            writeRegister(17, 0x00000002);     // Setteamos el bit 1 (N = 1)
-        else
-            writeRegister(17, 0x00000000);     // Apagamos los bits si es positivo
 }

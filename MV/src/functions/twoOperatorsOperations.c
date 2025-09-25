@@ -255,7 +255,7 @@ void op_div(uint32_t op1, uint32_t op2) {
                 writeRegister(3,0xFFFFFFFF);
         }
         setCondicion(a / b);
-        writeRegister(16, b % a);   // Guardamos el resto de la division en AC
+        writeRegister(16, a % b);   // Guardamos el resto de la division en AC
     }
 }
 
@@ -294,7 +294,7 @@ void op_cmp(uint32_t op1, uint32_t op2) {
             getRegister(reg1, &a);
             readMemory(sizeOp2, &b, op2);
         }
-        setCondicion(a - b);
+        setCondicion(b - a);
     }
 }
 
@@ -650,7 +650,7 @@ void op_ldl(uint32_t op1, uint32_t op2) {
             readMemory(sizeOp2, &b, op2);
             writeRegister(reg1, (a & 0xFFFF0000) | (b & 0x0000FFFF));
         }
-        setCondicion((a & 0xFFFF0000) | (b & 0x0000FFFF));
+        // setCondicion((a & 0xFFFF0000) | (b & 0x0000FFFF));
     }
 }
 
@@ -698,7 +698,7 @@ void op_ldh(uint32_t op1, uint32_t op2) {
             readMemory(sizeOp2, &b, op2);
             writeRegister(reg1, (a & 0x0000FFFF) | (b & 0xFFFF0000));
         }
-        setCondicion((a & 0x0000FFFF) | (b & 0xFFFF0000));
+        // setCondicion((a & 0x0000FFFF) | (b & 0xFFFF0000));
     }
 }
 
