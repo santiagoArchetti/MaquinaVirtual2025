@@ -148,6 +148,6 @@ void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
             printf("Error: Direccion invalida\n");
             writeRegister(3,0xFFFFFFFF);
             return;
-        }
+        } //PROBANDO
     }
 }
