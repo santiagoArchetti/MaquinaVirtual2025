@@ -257,6 +257,8 @@ int main(int argc, char* argv[]) {
     
     beginExecution(file, debug);
     
+    // Liberar memoria de la memoria
+    printf("Liberando memoria de la memoria\n");
     fclose(file);
     return 0;
 }
