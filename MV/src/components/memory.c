@@ -54,7 +54,8 @@ void memoryAccess(uint32_t SegmentValue, uint32_t OffsetValue, uint32_t *logical
     *logicalAddress = getLogicalAddress(SegmentValue, OffsetValue);
     writeRegister(0, *logicalAddress);  //escribimos el LAR
     *physicalAddress = getFisicalAddress(*logicalAddress);
-    uint32_t marValue = *physicalAddress;
+
+    uint32_t marValue = 0x00040000 | (*physicalAddress & 0xFFFF);
     writeRegister(1, marValue);  //escribimos el MAR con cantidad y direccion fisica
 }
 

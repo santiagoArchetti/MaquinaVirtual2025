@@ -102,10 +102,10 @@ void sys_read() {
         }
     }
 }
-
 void sys_write() {
-    uint32_t eax, edx, ecx;
-    
+    uint32_t eax, edx, ecx, auxEAX;
+    int k;
+
     // Leer registros involucrados
     getRegister(10, &eax);  // EAX - modo de interpretacion
     getRegister(12, &ecx);  // ECX - cantidad y tamaño
@@ -130,78 +130,41 @@ void sys_write() {
         }
         
         // Mostrar prompt con direccion fisica y valor
-        printf("[%04X]: ", (edx & 0xFFFF) + (i * 4) );      // (i * 4) Desplazamiento "Offset"
-        
-        switch (eax) {
-            case 0x01:{             // Decimal
-                printf("%d\n", (int32_t)valor);
-                break;
-            } 
-            case 0x02: {            // Caracteres
-                for (int j = 0; j < tamano_celda; j++) {
-                    uint8_t byte;
-                    readByte(direccion_fisica + j, &byte);
-                    if (byte != 0) printf("%c", byte);
+        auxEAX = eax;
+        k = 0;
+        if (auxEAX > 0x0 && auxEAX <= 0x1F) {
+            while (k < 5){
+                if ((auxEAX & 0x1) == 0x1){
+                    printf("[%04X]: ", (edx & 0xFFFF) + (i * 4) );      // (i * 4) Desplazamiento "Offset"
+                    switch (k) {
+                        case 0: {printf("%d\n", (int32_t)valor);                        // Decimal
+                            break;}
+                        case 1: {for (int j = 0; j < tamano_celda; j++) {               // Caracter
+                                    uint8_t byte;
+                                    readByte(direccion_fisica + j, &byte);
+                                    if (byte != 0) printf("\t%c", byte);
+                                }
+                            break;}
+                        case 2: {printf("%o\n", valor);                                 // Octal
+                            break;}
+                        case 3: {printf("%X\n", valor);                                 // Hexadecimal
+                            break;}
+                        case 4: {for (int bit = 31; bit >= 0; bit--) {                  // Binario
+                            printf("%d", (valor >> bit) & 1);
+                        }
+                        printf("\n");
+                        break;}
+                    }
                 }
-                printf("\n");
-                break;
+                k++;
+                auxEAX = auxEAX >> 1;
             }
-            case 0x04:{             // Octal
-                printf("%o\n", valor);
-                break;
-            } 
-            case 0x08: {            // Hexadecimal
-                printf("%X\n", valor);
-                break;
-            }
-            case 0x10: {            // Binario
-                for (int bit = 31; bit >= 0; bit--) {
-                    printf("%d", (valor >> bit) & 1);
-                }
-                printf("\n");
-                break;    
-            }
-            default:{               // Caso contrario
-                printf("Error: Interpretation mode invalid: 0x%02X\n", eax);
-                writeRegister(3, 0xFFFFFFFF);
-                return;
-            }
+        }else {
+            printf("Error: formato de escritura invalido");
+            writeRegister(3,0xFFFFFFFF);
         }
-        /*
-        if (eax & 0x01) {                       // Decimal
-        printf("[%04X]: ", direccion_actual - 4 & 0xFFFF);
-        
-        if (eax & 0x0009) { // Decimal
-            printf("%d\n", (int32_t)valor);
-            
-        } else if (eax & 0x02) {                // Caracteres
-            for (int j = 0; j < tamano_celda; j++) {
-                uint8_t byte;
-                readByte(direccion_fisica + j, &byte);
-                if (byte != 0) printf("%c", byte);
-            }
-            printf("\n");
-            
-        } else if (eax & 0x04) {                // Octal
-            printf("%o\n", valor);
-            
-        } else if (eax & 0x08) {                // Hexadecimal
-            printf("%X\n", valor);
-            
-        } else if (eax & 0x10) {                // Binario
-            for (int bit = 31; bit >= 0; bit--) {
-                printf("%d", (valor >> bit) & 1);
-            }
-            printf("\n");
-            
-        } else {
-            printf("Error: Interpretation mode invalid: 0x%02X\n", eax);
-            writeRegister(3, 0xFFFFFFFF);
-            return;
-        }*/
     }
 }
-
 /* --------------------- JUMPS ------------------------ */
 void op_jmp(uint32_t op1) {
     writeRegister(3, op1 & 0x00FFFFFF); // Actualizar IP

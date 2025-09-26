@@ -222,7 +222,6 @@ void beginExecution(FILE *file, int debug) {
         
         // Actualizar IP para la siguiente iteracion
         getRegister(3, &IP);
-        printf("[%04X]\n", IP);
     }
     
 

@@ -38,11 +38,8 @@ void op_mov(uint32_t op1, uint32_t op2) {
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
 
             uint32_t value;
-            //uint32_t aux;
 
             getRegister(reg2, &value);
-            //printf(" VALOR: %08x", value);
-            //invertir(&aux, value);
             writeMemory(sizeOp1, value, op1);
 
         } else {
@@ -744,27 +741,3 @@ void op_rnd(uint32_t op1, uint32_t op2) {
         setCondicion(a);
     }
 }
-
-/*  FORMATO AUXILIAR
-
-    uint8_t sizeOp1 = op1 >> 24;
-
-    if ( sizeOp1 == 1 ){ 
-        writeRegister(3,0xFFFFFFFF);
-    } else {
-        
-        uint8_t sizeOp2 = op2 >> 24;
-        if ( sizeOp1 == 2 && sizeOp2 == 2 ){            // De registro a registro
-
-        }  else if ( sizeOp1 == 2 && sizeOp2 == 1 ){    // Inmediato a registro
-        
-        } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // Inmediato a memoria
-
-        } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // De registro a memoria
-
-        } else if ( sizeOp1 == 3 && sizeOp2 == 3 ){     // Memoria a memoria
-
-        } else if ( sizeOp1 == 2 && sizeOp2 == 3 ){     // Memoria a registro
-        }
-    }
-*/
