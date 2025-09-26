@@ -38,8 +38,8 @@ void op_mov(uint32_t op1, uint32_t op2) {
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
 
             uint32_t value;
-
             getRegister(reg2, &value);
+            value =  value & 0x0000FFFF;;
             writeMemory(sizeOp1, value, op1);
 
         } else {
@@ -667,7 +667,7 @@ void op_ldh(uint32_t op1, uint32_t op2) {
             getRegister(reg2, &b);
             
             // Mantenemos lo que estaba en la parte baja y cambiamos la parte alta
-            writeRegister(reg1, (a & 0x0000FFFF) | (b & 0xFFFF0000));    
+            writeRegister(reg1, (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));    
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister(reg1, &a);
@@ -678,22 +678,22 @@ void op_ldh(uint32_t op1, uint32_t op2) {
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(sizeOp1, &a, op1);
             b = op2 & 0xFFFF;
-            writeMemory(sizeOp1, (a & 0x0000FFFF) | (b & 0xFFFF0000), op1);
+            writeMemory(sizeOp1, (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16), op1);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
             readMemory(sizeOp1, &a, op1);
             getRegister(reg2, &b);
-            writeMemory(sizeOp1, (a & 0x0000FFFF) | (b & 0xFFFF0000), op1);
+            writeMemory(sizeOp1, (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16), op1);
 
         } else if ( sizeOp1 == 3 && sizeOp2 == 3 ){     // Memoria a memoria
             readMemory(sizeOp1, &a, op1);
             readMemory(sizeOp2, &b, op2);
-            writeMemory(sizeOp1,(a & 0x0000FFFF) | (b & 0xFFFF0000), op1);
+            writeMemory(sizeOp1,(a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16), op1);
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
             getRegister(reg1, &a);
             readMemory(sizeOp2, &b, op2);
-            writeRegister(reg1, (a & 0x0000FFFF) | (b & 0xFFFF0000));
+            writeRegister(reg1, (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));
         }
         // setCondicion((a & 0x0000FFFF) | (b & 0xFFFF0000));
     }

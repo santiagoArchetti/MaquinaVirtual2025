@@ -133,32 +133,34 @@ void sys_write() {
         auxEAX = eax;
         k = 0;
         if (auxEAX > 0x0 && auxEAX <= 0x1F) {
+            printf("[%04X]: ", (edx & 0xFFFF) + (i * 4) );      // (i * 4) Desplazamiento "Offset"
             while (k < 5){
                 if ((auxEAX & 0x1) == 0x1){
-                    printf("[%04X]: ", (edx & 0xFFFF) + (i * 4) );      // (i * 4) Desplazamiento "Offset"
                     switch (k) {
-                        case 0: {printf("%d\n", (int32_t)valor);                        // Decimal
+                        case 0: {printf("D:%d", (int32_t)valor);                        // Decimal
                             break;}
-                        case 1: {for (int j = 0; j < tamano_celda; j++) {               // Caracter
+                        case 1: {printf("C:"); for (int j = 0; j < tamano_celda; j++) {               // Caracter
                                     uint8_t byte;
                                     readByte(direccion_fisica + j, &byte);
-                                    if (byte != 0) printf("\t%c", byte);
+                                    if (byte != 0) printf("%c", byte);
                                 }
                             break;}
-                        case 2: {printf("%o\n", valor);                                 // Octal
+                        case 2: {printf("O:%o", valor);                                 // Octal
                             break;}
-                        case 3: {printf("%X\n", valor);                                 // Hexadecimal
+                        case 3: {printf("H:%X", valor);                                 // Hexadecimal
                             break;}
-                        case 4: {for (int bit = 31; bit >= 0; bit--) {                  // Binario
+                        case 4: {printf("B:"); for (int bit = 31; bit >= 0; bit--) {                  // Binario
                             printf("%d", (valor >> bit) & 1);
                         }
-                        printf("\n");
                         break;}
                     }
+                    // Si hay más formatos activos, agregar separador
+                    if ((auxEAX >> 1) != 0) printf(" | ");
                 }
                 k++;
                 auxEAX = auxEAX >> 1;
             }
+            printf("\n");
         }else {
             printf("Error: formato de escritura invalido");
             writeRegister(3,0xFFFFFFFF);

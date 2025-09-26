@@ -157,7 +157,7 @@ void beginExecution(FILE *file, int debug) {
                   operandA = ( (uint32_t) (bytes1[0] << 16) ) | ( (uint16_t) (bytes1[1] << 8) ) | bytes1[2];
                 }
                 operandA = ( (uint32_t) op1Bytes << 24 ) | operandA;   // Asignacion del codigo de operado
-                writeRegister(6, operandA);
+                writeRegister(5, operandA);
               }
               
               // Debug: mostrar mnemonico y ejecutar operacion 
@@ -200,6 +200,9 @@ void beginExecution(FILE *file, int debug) {
                 }
             } else{
               writeRegister(3,0xFFFFFFFF);
+              printf("\n=========================================\n");
+              printf("             INVALID OPCODE           \n");
+            
             }
 
         } else {  // Fallo de segmento
@@ -226,7 +229,7 @@ void beginExecution(FILE *file, int debug) {
     
 
     getRegister(3, &IP);
-    if (debug) {
+    if (debug && IP != 0xFFFFFFFF	) {
         printf("=========================================\n");
         printf("           END OF DISASSEMBLER          \n");
         printf("==========================================\n");
@@ -274,6 +277,7 @@ int main(int argc, char* argv[]) {
 }
 
 
-/*gcc -o vmx.exe main.c src/components/memory.c src/components/registers.c src/components/segmentTable.c src/functions/directions.c src/functions/operations.c src/functions/noOperatorOperations.c src/functions/oneOperatorsOperations.c src/functions/twoOperatorsOperations.c
-
+/*
+gcc -o vmx.exe main.c src/components/memory.c src/components/registers.c src/components/segmentTable.c src/functions/directions.c src/functions/operations.c 
+src/functions/noOperatorOperations.c src/functions/oneOperatorsOperations.c src/functions/twoOperatorsOperations.c
 */
