@@ -228,12 +228,12 @@ void beginExecution(FILE *file, int debug) {
 
     getRegister(3, &IP);
     if (debug) {
-        printf("==========================================\n");
-        printf("           END OF DISASSEMBLER           \n");
+        printf("=========================================\n");
+        printf("           END OF DISASSEMBLER          \n");
         printf("==========================================\n");
     } else {
         if (IP == 0xFFFFFFFF) {
-            printf("==========================================\n");
+            printf("=========================================\n");
             printf("           EXECUTION TERMINATED           \n");
             printf("==========================================\n");
         } else {
@@ -249,7 +249,7 @@ void beginExecution(FILE *file, int debug) {
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         printf("==========================================\n");
-        printf("              VMX25 EMULATOR              \n");
+        printf("              VMX25 EMULATOR MACHINE              \n");
         printf("==========================================\n");
         printf("Usage: %s <file.vmx> [-d]\n", argv[0]);
         printf("  -d: Debug mode (disassembler)\n");
