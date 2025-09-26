@@ -212,7 +212,7 @@ void op_jz(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if (cc & 0x00000001) {  // Z flag
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        writeRegister(3, op1);  // Saltar
     }
 }
 
@@ -220,7 +220,7 @@ void op_jp(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if (!(cc & 0x00000001) && !(cc & 0x00000002)) {  // No Z y no N
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        writeRegister(3, op1);  // Saltar
     }
 }
 
@@ -228,7 +228,7 @@ void op_jn(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if (cc & 0x00000002) {  // N flag
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        writeRegister(3, op1);  // Saltar
     }
 }
 
@@ -236,7 +236,7 @@ void op_jnz(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if (!(cc & 0x00000001)) {  // No Z flag
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        writeRegister(3, op1);  // Saltar
     }
 }
 
@@ -244,7 +244,7 @@ void op_jnp(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if ((cc & 0x00000001) || (cc & 0x00000002)) {  // Z o N
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        writeRegister(3, op1);  // Saltar
     }
 }
 
@@ -252,7 +252,7 @@ void op_jnn(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if (!(cc & 0x00000002)) {  // No N flag
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        writeRegister(3, op1);  // Saltar
     }
 }
 /* ----------------------------------------------------- */

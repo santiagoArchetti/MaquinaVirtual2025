@@ -270,7 +270,11 @@ int main(int argc, char* argv[]) {
     beginExecution(file, debug);
     
     // Liberar memoria de la memoria
-    printf("Liberando memoria de la memoria\n");
     fclose(file);
     return 0;
 }
+
+
+/*gcc -o vmx.exe main.c src/components/memory.c src/components/registers.c src/components/segmentTable.c src/functions/directions.c src/functions/operations.c src/functions/noOperatorOperations.c src/functions/oneOperatorsOperations.c src/functions/twoOperatorsOperations.c
+
+*/
