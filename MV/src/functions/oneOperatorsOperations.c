@@ -169,6 +169,9 @@ void sys_write() {
         }
         /*
         if (eax & 0x01) {                       // Decimal
+        printf("[%04X]: ", direccion_actual - 4 & 0xFFFF);
+        
+        if (eax & 0x0009) { // Decimal
             printf("%d\n", (int32_t)valor);
             
         } else if (eax & 0x02) {                // Caracteres
@@ -201,7 +204,7 @@ void sys_write() {
 
 /* --------------------- JUMPS ------------------------ */
 void op_jmp(uint32_t op1) {
-    writeRegister(3, op1); // Actualizar IP
+    writeRegister(3, op1 & 0x00FFFFFF); // Actualizar IP
     printf("JMP: Jumping to address: %04x\n", op1 & 0xFFFF);
 }
 
