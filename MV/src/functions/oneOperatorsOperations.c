@@ -30,16 +30,16 @@ void sys_read() {
     
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
-    
+
     printf("SYS READ | Dir: 0x%08X | Count: %u | Size: %04X\n", 
-           eax, edx, cantidad, tamano_celda);
+           edx, cantidad, tamano_celda);
     
     for (int i = 0; i < cantidad; i++) {
         uint32_t direccion_actual = edx + (i * tamano_celda);
         uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
         
         // Mostrar prompt con direccion fisica
-        printf("[%04X]: ", edx & 0xFFFF);
+        printf("[%04X]: ", (edx & 0xFFFF) + (i * 4));
         
         if (eax & 0x01) { // Decimal
             int32_t valor;
@@ -102,6 +102,7 @@ void sys_read() {
         }
     }
 }
+
 void sys_write() {
     uint32_t eax, edx, ecx, auxEAX;
     int k;
@@ -137,22 +138,24 @@ void sys_write() {
             while (k < 5){
                 if ((auxEAX & 0x1) == 0x1){
                     switch (k) {
-                        case 0: {printf("D:%d", (int32_t)valor);                        // Decimal
+                        case 0: {printf("D:%d", (int32_t)valor);                            // Decimal
                             break;}
-                        case 1: {printf("C:"); for (int j = 0; j < tamano_celda; j++) {               // Caracter
+                        case 1: {printf("C:");                                              // Caracter
+                                for (int j = 0; j < tamano_celda; j++) {
                                     uint8_t byte;
                                     readByte(direccion_fisica + j, &byte);
                                     if (byte != 0) printf("%c", byte);
                                 }
                             break;}
-                        case 2: {printf("O:%o", valor);                                 // Octal
+                        case 2: {printf("O:%o", valor);                                     // Octal
                             break;}
-                        case 3: {printf("H:%X", valor);                                 // Hexadecimal
+                        case 3: {printf("H:%08X", valor);                                   // Hexadecimal
                             break;}
-                        case 4: {printf("B:"); for (int bit = 31; bit >= 0; bit--) {                  // Binario
-                            printf("%d", (valor >> bit) & 1);
-                        }
-                        break;}
+                        case 4: {printf("B:");                                              // Binario
+                            for (int bit = 31; bit >= 0; bit--) {
+                                printf("%d", (valor >> bit) & 1);
+                            }
+                            break;}
                     }
                     // Si hay más formatos activos, agregar separador
                     if ((auxEAX >> 1) != 0) printf(" | ");

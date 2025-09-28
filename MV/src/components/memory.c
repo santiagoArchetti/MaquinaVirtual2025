@@ -29,7 +29,6 @@ int writeByte(int address, uint8_t value) {
         printf("Error: Address %d out of range (0-%d)\n", address, MAX_ADDRESS);
         return 0;
     }
-    
     memory.data[address] = value;
     return 1;
 }
@@ -129,9 +128,9 @@ void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
 
     uint8_t extractedByte = (op >> 16) & 0xFF;
     uint32_t registerValue;
-    getRegister(binADecimal(extractedByte), &registerValue);  
+    getRegister(binADecimal(extractedByte), &registerValue);
     uint16_t segmentRegister = (uint16_t)(registerValue >> 16);
-    uint16_t offset = op & 0xFFFF;  
+    uint16_t offset = (op & 0xFFFF) + (registerValue & 0xFFFF);
     
     if (sizeOp == 1){
         valueToWrite = aux & 0x00FFFFFF;
@@ -142,13 +141,13 @@ void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op) {
     for (int i = 0; i < 4; i++) {
         value = (uint8_t) ((valueToWrite >> ((4 - 1 - i) * 8)) & 0xFF);  // big Endian
         writeRegister(2,value);
-        setMemoryAccess(segmentRegister, offset + i, &logicalAddress, &fisicalAddress);
+        memoryAccess(segmentRegister, offset + i, &logicalAddress, &fisicalAddress);
         if (isValidAddress(fisicalAddress, 1, segmentRegister)) {
             writeByte(fisicalAddress, value);
         }else{
             printf("Error: Direccion invalida\n");
             writeRegister(3,0xFFFFFFFF);
             return;
-        } //PROBANDO
+        }
     }
 }
