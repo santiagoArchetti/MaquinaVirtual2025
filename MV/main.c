@@ -71,16 +71,15 @@ void beginExecution(FILE *file, int debug) {
     uint32_t logicalAddress, fisicalAddress;
 
     while (IP < baseCodeSegment + codeSegmentValueLength && IP >= baseCodeSegment && IP != 0xFFFFFFFF) {
-
-        getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress);
-        
+        logicalAddress = getLogicalAddress(csValue, IP);
+        fisicalAddress = getFisicalAddress(logicalAddress);
         // Guardar IP antes de ejecutar la operación
         uint32_t IPBeforeExecution = IP;
         
         if (isValidAddress(fisicalAddress, 1, csValue)) {
-            uint32_t mbrValue;
-            getRegister(2, &mbrValue); //trae el dato del mbr
-            opCode = (uint8_t)(mbrValue & 0xFF);
+            uint8_t Value;
+            readByte(fisicalAddress, &Value); //trae el dato del mbr
+            opCode = (uint8_t)(Value & 0xFF);
 
             uint8_t op1Bytes, op2Bytes;
             analizeInstruction(opCode, &op1Bytes, &op2Bytes);
@@ -106,10 +105,10 @@ void beginExecution(FILE *file, int debug) {
 
                 uint8_t TOPE_IP = IP + op2Bytes;
                 while (IP < TOPE_IP) {
-                  getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress);
-                  uint32_t mbrValue;
-                  getRegister(2, &mbrValue); //trae el dato del mbr
-                  opCode = (uint8_t)(mbrValue & 0xFF);
+                  logicalAddress = getLogicalAddress(csValue, IP);
+                  fisicalAddress = getFisicalAddress(logicalAddress);
+                  readByte(fisicalAddress, &Value); //trae el dato del mbr
+                  opCode = (uint8_t)(Value & 0xFF);
                   bytes2[i] = opCode;
                   if (debug) {
                       printf(" %02X", opCode);
@@ -137,10 +136,10 @@ void beginExecution(FILE *file, int debug) {
                 uint8_t TOPE_IP = IP + op1Bytes;
 
                 while (IP < TOPE_IP) {
-                  getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress);
-                  uint32_t mbrValue;
-                  getRegister(2, &mbrValue); //trae el dato del mbr
-                  opCode = (uint8_t)(mbrValue & 0xFF);
+                  logicalAddress = getLogicalAddress(csValue, IP);
+                  fisicalAddress = getFisicalAddress(logicalAddress);
+                  readByte(fisicalAddress, &Value); //trae el dato del mbr
+                  opCode = (uint8_t)(Value & 0xFF);
                   bytes1[i] = opCode;
                   if (debug) {
                       printf(" %02X", opCode);

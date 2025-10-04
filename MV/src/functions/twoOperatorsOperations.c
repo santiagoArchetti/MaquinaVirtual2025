@@ -305,10 +305,10 @@ void op_div(uint32_t op1, uint32_t op2) {
             else
                 setRegister(3,0xFFFFFFFF);
         }
-        if (b != 0)
+        if (b != 0){ 
             setCondicion(a / b);
             setRegister(16, a % b);   // Guardamos el resto de la division en AC
-        else
+        } else 
             setRegister(3,0xFFFFFFFF);
     }
 }
