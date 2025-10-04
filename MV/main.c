@@ -46,9 +46,9 @@ void beginExecution(FILE *file, int debug) {
         writeByte(i, opCode);
     }
 
-    writeRegister(26, 0x00000000);
-    writeRegister(27, 0x00010000);
-    writeRegister(3, 0x00000000);
+    setRegister(26, 0x00000000);
+    setRegister(27, 0x00010000);
+    setRegister(3, 0x00000000);
 
     uint16_t baseCodeSegment, codeSegmentValueLength;
     uint32_t csValue;
@@ -92,7 +92,7 @@ void beginExecution(FILE *file, int debug) {
             }
             
             uint8_t cleanOpCode = opCode & 0x1F;
-            writeRegister(4, cleanOpCode);
+            setRegister(4, cleanOpCode);
             
             IP = IP + 1;  // Avanzamos la instruccion
             
@@ -126,7 +126,7 @@ void beginExecution(FILE *file, int debug) {
                   operandB = ( (uint32_t) (bytes2[0] << 16) ) | ( (uint16_t) (bytes2[1] << 8) )| bytes2[2];
                 }
                 operandB = ( (uint32_t) op2Bytes << 24 ) | operandB;   // Asignacion del codigo de operado
-                writeRegister(6, operandB);
+                setRegister(6, operandB);
               }  
 
               
@@ -157,7 +157,7 @@ void beginExecution(FILE *file, int debug) {
                   operandA = ( (uint32_t) (bytes1[0] << 16) ) | ( (uint16_t) (bytes1[1] << 8) ) | bytes1[2];
                 }
                 operandA = ( (uint32_t) op1Bytes << 24 ) | operandA;   // Asignacion del codigo de operado
-                writeRegister(5, operandA);
+                setRegister(5, operandA);
               }
               
               // Debug: mostrar mnemonico y ejecutar operacion 
@@ -199,7 +199,7 @@ void beginExecution(FILE *file, int debug) {
                   opTable0[cleanOpCode]();
                 }
             } else{
-              writeRegister(3,0xFFFFFFFF);
+              setRegister(3,0xFFFFFFFF);
               printf("\n=========================================\n");
               printf("             INVALID OPCODE           \n");
             
@@ -207,7 +207,7 @@ void beginExecution(FILE *file, int debug) {
 
         } else {  // Fallo de segmento
             printf("ERROR: Fallo de segmento - Direccion fisica 0x%08X invalida\n", fisicalAddress);
-            writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion
+            setRegister(3, 0xFFFFFFFF); // Terminar ejecucion
         }
         
         // Verificar si se estableció terminación antes de sobrescribir IP
@@ -218,7 +218,7 @@ void beginExecution(FILE *file, int debug) {
         if (currentIP != 0xFFFFFFFF) {
             // Si el IP no cambió durante la ejecución, actualizarlo normalmente
             if (currentIP == IPBeforeExecution) {
-                writeRegister(3, IP);
+                setRegister(3, IP);
             }
             // Si cambió (por ejemplo, en un salto), mantener el nuevo valor
         }
@@ -278,6 +278,5 @@ int main(int argc, char* argv[]) {
 
 
 /*
-gcc -o vmx.exe main.c src/components/memory.c src/components/registers.c src/components/segmentTable.c src/functions/directions.c src/functions/operations.c 
-src/functions/noOperatorOperations.c src/functions/oneOperatorsOperations.c src/functions/twoOperatorsOperations.c
+gcc -o vmx.exe main.c src/components/memory.c src/components/registers.c src/components/segmentTable.c src/functions/directions.c src/functions/operations.c src/functions/noOperatorOperations.c src/functions/oneOperatorsOperations.c src/functions/twoOperatorsOperations.c
 */

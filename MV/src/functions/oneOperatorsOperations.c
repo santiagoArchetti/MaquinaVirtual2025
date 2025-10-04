@@ -16,7 +16,7 @@ void op_sys(uint32_t op1) {
         sys_write();
     } else {
         printf("Error: SYS code invalid: %u\n", op1);
-        writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
+        setRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
     }
 }
 
@@ -39,7 +39,7 @@ void sys_read() {
         uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
         
         // Mostrar prompt con direccion fisica
-        printf("[%04X]: ", (edx & 0xFFFF) + (i * 4));
+        printf("[%04X]: ", (direccion_fisica & 0xFFFF));
         
         if (eax & 0x01) { // Decimal
             int32_t valor;
@@ -64,9 +64,9 @@ void sys_read() {
             uint32_t valor;
             scanf("%x", &valor);
             
-            // Escribir valor en memoria (little-endian)
+            // Escribir valor en memoria (big-endian)
             for (int j = 0; j < tamano_celda && j < 4; j++) {
-                uint8_t byte = (valor >> (j * 8)) & 0xFF;
+                uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
                 writeByte(direccion_fisica + j, byte);
             }
             
@@ -74,9 +74,9 @@ void sys_read() {
             uint32_t valor;
             scanf("%o", &valor);
             
-            // Escribir valor en memoria (little-endian)
+            // Escribir valor en memoria (big-endian)
             for (int j = 0; j < tamano_celda && j < 4; j++) {
-                uint8_t byte = (valor >> (j * 8)) & 0xFF;
+                uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
                 writeByte(direccion_fisica + j, byte);
             }
             
@@ -89,15 +89,15 @@ void sys_read() {
                 valor = (valor << 1) + (binario[k] - '0');
             }
             
-            // Escribir valor en memoria (little-endian)
+            // Escribir valor en memoria (big-endian)
             for (int j = 0; j < tamano_celda && j < 4; j++) {
-                uint8_t byte = (valor >> (j * 8)) & 0xFF;
+                uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
                 writeByte(direccion_fisica + j, byte);
             }
             
         } else {
             printf("Error: Interpretation mode invalid: 0x%02X\n", eax);
-            writeRegister(3, 0xFFFFFFFF);
+            setRegister(3, 0xFFFFFFFF);
             return;
         }
     }
@@ -115,8 +115,7 @@ void sys_write() {
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
 
-    printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %04X\n", 
-           edx, cantidad, tamano_celda);
+    printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %04X\n",            edx, cantidad, tamano_celda);
  
     for (int i = 0; i < cantidad; i++) {
         uint32_t direccion_actual = edx + (i * tamano_celda);
@@ -134,7 +133,7 @@ void sys_write() {
         auxEAX = eax;
         k = 0;
         if (auxEAX > 0x0 && auxEAX <= 0x1F) {
-            printf("[%04X]: ", (edx & 0xFFFF) + (i * 4) );      // (i * 4) Desplazamiento "Offset"
+            printf("[%04X]: ", (direccion_fisica & 0xFFFF));      // (i * 4) Desplazamiento "Offset"
             while (k < 5){
                 if ((auxEAX & 0x1) == 0x1){
                     switch (k) {
@@ -166,13 +165,13 @@ void sys_write() {
             printf("\n");
         }else {
             printf("Error: formato de escritura invalido");
-            writeRegister(3,0xFFFFFFFF);
+            setRegister(3,0xFFFFFFFF);
         }
     }
 }
 /* --------------------- JUMPS ------------------------ */
 void op_jmp(uint32_t op1) {
-    writeRegister(3, op1 & 0x00FFFFFF); // Actualizar IP
+    setRegister(3, op1 & 0x00FFFFFF); // Actualizar IP
     printf("JMP: Jumping to address: %04x\n", op1 & 0xFFFF);
 }
 
@@ -180,7 +179,7 @@ void op_jz(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if (cc & 0x00000001) {  // Z flag
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
 
@@ -188,7 +187,7 @@ void op_jp(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if (!(cc & 0x00000001) && !(cc & 0x00000002)) {  // No Z y no N
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
 
@@ -196,7 +195,7 @@ void op_jn(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if (cc & 0x00000002) {  // N flag
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
 
@@ -204,7 +203,7 @@ void op_jnz(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if (!(cc & 0x00000001)) {  // No Z flag
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
 
@@ -212,7 +211,7 @@ void op_jnp(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if ((cc & 0x00000001) || (cc & 0x00000002)) {  // Z o N
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
 
@@ -220,27 +219,32 @@ void op_jnn(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
     if (!(cc & 0x00000002)) {  // No N flag
-        writeRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
 /* ----------------------------------------------------- */
 void op_not(uint32_t op1) {
 
+    uint32_t mbrValue;  // Variable MBR para operaciones de memoria
     uint8_t sizeOp1 = op1 >> 24;
-    uint32_t aux;
+    uint32_t aux = 0;  // Inicializar aux
     int reg = binADecimal(op1);
 
     if ( sizeOp1 == 2 ){
-        writeRegister(3,0xFFFFFFFF);
+        setRegister(3,0xFFFFFFFF);
     } else if ( sizeOp1 == 1){     // De registro
         getRegister(reg, &aux);
-        writeRegister(reg, ~aux);
+        setRegister(reg, ~aux);
     
     } else if ( sizeOp1 == 3){     // De memoria
-        readMemory(sizeOp1, &aux, op1);
-        writeMemory(sizeOp1, ~aux, op1);
+        readMemory(op1);
+        getRegister(2, &aux);
+        setRegister(2, ~aux);
+        writeMemory(op1);
 
     }
-    setCondicion(~aux);
+    if (sizeOp1 != 2) {  // Solo llamar setCondicion si no hay error
+        setCondicion(~aux);
+    }
 }
 

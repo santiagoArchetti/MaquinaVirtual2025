@@ -20,9 +20,5 @@ void op_ldl(uint32_t op1, uint32_t op2);
 void op_ldh(uint32_t op1, uint32_t op2);
 void op_rnd(uint32_t op1, uint32_t op2);
 
-// Funciones auxiliares
-void setCondicion(uint32_t value);
-void readMemory(uint8_t sizeOp, uint32_t *valueAux, uint32_t op);
-void writeMemory(uint8_t sizeOp, uint32_t aux, uint32_t op);
 
 #endif

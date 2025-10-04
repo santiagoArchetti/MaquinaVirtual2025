@@ -11,7 +11,7 @@ void initRegisters() { // inicializamos en 0 todos los registros
 }
 
 // Funcion para escribir un registro
-void writeRegister(int regIndex, uint32_t value) {
+void setRegister(int regIndex, uint32_t value) {
     if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
         printf("Error: Invalid register index: %d\n", regIndex);
         return;
@@ -33,7 +33,7 @@ int opCodeExists(uint8_t opCode){
     if ( ( opCode >= 0x10 && opCode <= 0x1F ) || ( opCode >= 0x00 && opCode <= 0x08 ) || opCode == 0x0F)
         return 1;
     else{
-        writeRegister(3,0xFFFFFFFF);
+        setRegister(3,0xFFFFFFFF);
         return 0;
     }
 }
@@ -126,10 +126,10 @@ void getOperandName(uint32_t name) {
 
 void setCondicion(uint32_t value) {
     if ( (value >> 31) == 0x1 )
-        writeRegister(17, 0x00000002);         // Setteamos el bit 1 (N = 1)
+        setRegister(17, 0x00000002);         // Setteamos el bit 1 (N = 1)
     else 
         if ( value == 0x0 )
-            writeRegister(17, 0x00000001);     // Setteamos el bit 0 (Z = 1)
+            setRegister(17, 0x00000001);     // Setteamos el bit 0 (Z = 1)
         else
-            writeRegister(17, 0x00000000);     // Apagamos los bits si es positivo
+            setRegister(17, 0x00000000);     // Apagamos los bits si es positivo
 }
