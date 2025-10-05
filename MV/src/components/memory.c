@@ -98,16 +98,16 @@ void readMemory (uint32_t op) {
      uint32_t registerValue;
      getRegister(extractedByte, &registerValue);  
      uint16_t segmentRegister = (uint16_t)(registerValue >> 16);
-     uint16_t offset = op & 0xFFFF;
-     
-     uint32_t marValue;
-     getRegister(1, &marValue);
-     int bytesToRead = marValue >>16 & 0xFF;
+     uint16_t offset = (op & 0xFFFF) + (registerValue & 0xFFFF);
 
      uint8_t data;
      uint32_t mbrValue = 0;  // Inicializar mbrValue
      memoryAccess(segmentRegister, offset, &logicalAddress, &physicalAddress); //setea configuracion de memoria para lectura
     
+    uint32_t marValue;
+    getRegister(1, &marValue);
+    int bytesToRead = marValue >> 16 & 0xFF;
+
     // Siempre leer bytes de memoria (big-endian)
     for (int i = 0; i < bytesToRead; i++ ) {       
         if (isValidAddress(physicalAddress+i, 1, segmentRegister)) {
@@ -135,8 +135,11 @@ void writeMemory (uint32_t op) {
     uint16_t segmentRegister = (uint16_t)(registerValue >> 16);
     uint16_t offset = (op & 0xFFFF) + (registerValue & 0xFFFF);
      
-    uint32_t valueMBR;
-    getRegister(2, &valueMBR);
+    uint32_t MBR;
+    getRegister(2, &MBR);
+    int32_t valueMBR = (int32_t)MBR;  
+
+
     memoryAccess(segmentRegister, offset, &logicalAddress, &physicalAddress);
     // Siempre escribir 4 bytes en memoria (big-endian)
     for (int i = 0; i < 4; i++) {

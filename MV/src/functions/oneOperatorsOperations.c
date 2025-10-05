@@ -33,71 +33,75 @@ void sys_read() {
 
     printf("SYS READ | Dir: 0x%08X | Count: %u | Size: %04X\n", 
            edx, cantidad, tamano_celda);
-    
     for (int i = 0; i < cantidad; i++) {
         uint32_t direccion_actual = edx + (i * tamano_celda);
         uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
         
         // Mostrar prompt con direccion fisica
         printf("[%04X]: ", (direccion_fisica & 0xFFFF));
-        
-        if (eax & 0x01) { // Decimal
-            int32_t valor;
-            scanf("%d", &valor);
-            
-            // Escribir valor en memoria (big-endian)
-            for (int j = 0; j < tamano_celda && j < 4; j++) {
-                uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
-                writeByte(direccion_fisica + j, byte);
+        if (isValidAddress(direccion_fisica,1, ((edx >> 16) & 0xFFFF) )) {    
+            if (eax & 0x01) {                               // Decimal
+                int32_t valor;
+                scanf("%d", &valor);
+                
+                // Escribir valor en memoria (big-endian)
+                for (int j = 0; j < tamano_celda && j < 4; j++) {
+                    uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
+                    writeByte(direccion_fisica + j, byte);
+                }
+                
+            } else if (eax & 0x02) { // Caracteres
+                char buffer[256];
+                scanf("%s", buffer);
+                
+                // Escribir caracteres en memoria
+                for (int j = 0; j < tamano_celda && buffer[j] != '\0'; j++) {
+                    writeByte(direccion_fisica + j, (uint8_t)buffer[j]);
+                }
+                
+            } else if (eax & 0x08) { // Hexadecimal
+                uint32_t valor;
+                scanf("%x", &valor);
+                
+                // Escribir valor en memoria (big-endian)
+                for (int j = 0; j < tamano_celda && j < 4; j++) {
+                    uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
+                    writeByte(direccion_fisica + j, byte);
+                }
+                
+            } else if (eax & 0x04) { // Octal
+                uint32_t valor;
+                scanf("%o", &valor);
+                
+                // Escribir valor en memoria (big-endian)
+                for (int j = 0; j < tamano_celda && j < 4; j++) {
+                    uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
+                    writeByte(direccion_fisica + j, byte);
+                }
+                
+            } else if (eax & 0x10) { // Binario
+                char binario[33];
+                scanf("%s", binario);
+                
+                uint32_t valor = 0;
+                for (int k = 0; binario[k] != '\0'; k++) {
+                    valor = (valor << 1) + (binario[k] - '0');
+                }
+                
+                // Escribir valor en memoria (big-endian)
+                for (int j = 0; j < tamano_celda && j < 4; j++) {
+                    uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
+                    writeByte(direccion_fisica + j, byte);
+                }
+                
+            } else {
+                printf("Error: Interpretation mode invalid: 0x%02X\n", eax);
+                setRegister(3, 0xFFFFFFFF);
+                return;
             }
-            
-        } else if (eax & 0x02) { // Caracteres
-            char buffer[256];
-            scanf("%s", buffer);
-            
-            // Escribir caracteres en memoria
-            for (int j = 0; j < tamano_celda && buffer[j] != '\0'; j++) {
-                writeByte(direccion_fisica + j, (uint8_t)buffer[j]);
-            }
-            
-        } else if (eax & 0x08) { // Hexadecimal
-            uint32_t valor;
-            scanf("%x", &valor);
-            
-            // Escribir valor en memoria (big-endian)
-            for (int j = 0; j < tamano_celda && j < 4; j++) {
-                uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
-                writeByte(direccion_fisica + j, byte);
-            }
-            
-        } else if (eax & 0x04) { // Octal
-            uint32_t valor;
-            scanf("%o", &valor);
-            
-            // Escribir valor en memoria (big-endian)
-            for (int j = 0; j < tamano_celda && j < 4; j++) {
-                uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
-                writeByte(direccion_fisica + j, byte);
-            }
-            
-        } else if (eax & 0x10) { // Binario
-            char binario[33];
-            scanf("%s", binario);
-            
-            uint32_t valor = 0;
-            for (int k = 0; binario[k] != '\0'; k++) {
-                valor = (valor << 1) + (binario[k] - '0');
-            }
-            
-            // Escribir valor en memoria (big-endian)
-            for (int j = 0; j < tamano_celda && j < 4; j++) {
-                uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
-                writeByte(direccion_fisica + j, byte);
-            }
-            
         } else {
-            printf("Error: Interpretation mode invalid: 0x%02X\n", eax);
-            setRegister(3, 0xFFFFFFFF);
+            printf("Error: Se cayo del segmento: 0x%08X\n", direccion_fisica);
+            setRegister(3,0xFFFFFFFF);
             return;
         }
     }
@@ -148,7 +152,7 @@ void sys_write() {
                             break;}
                         case 2: {printf("O:%o", valor);                                     // Octal
                             break;}
-                        case 3: {printf("H:%08X", valor);                                   // Hexadecimal
+                        case 3: {printf("H:%X", valor);                                   // Hexadecimal
                             break;}
                         case 4: {printf("B:");                                              // Binario
                             for (int bit = 31; bit >= 0; bit--) {
@@ -178,7 +182,7 @@ void op_jmp(uint32_t op1) {
 void op_jz(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
-    if (cc & 0x00000001) {  // Z flag
+    if (cc & 0x40000000) {  // Z flag
         setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
@@ -186,7 +190,7 @@ void op_jz(uint32_t op1) {
 void op_jp(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
-    if (!(cc & 0x00000001) && !(cc & 0x00000002)) {  // No Z y no N
+    if (!(cc & 0x40000000) && !(cc & 0x80000000)) {  // No Z y no N
         setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
@@ -194,7 +198,7 @@ void op_jp(uint32_t op1) {
 void op_jn(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
-    if (cc & 0x00000002) {  // N flag
+    if (cc & 0x80000000) {  // N flag
         setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
@@ -202,7 +206,7 @@ void op_jn(uint32_t op1) {
 void op_jnz(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
-    if (!(cc & 0x00000001)) {  // No Z flag
+    if (!(cc & 0x40000000)) {  // No Z flag
         setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
@@ -210,7 +214,7 @@ void op_jnz(uint32_t op1) {
 void op_jnp(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
-    if ((cc & 0x00000001) || (cc & 0x00000002)) {  // Z o N
+    if ((cc & 0x40000000) || (cc & 0x80000000)) {  // Z o N
         setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
@@ -218,7 +222,7 @@ void op_jnp(uint32_t op1) {
 void op_jnn(uint32_t op1) {
     uint32_t cc;
     getRegister(17, &cc);
-    if (!(cc & 0x00000002)) {  // No N flag
+    if (!(cc & 0x80000000)) {  // No N flag
         setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }

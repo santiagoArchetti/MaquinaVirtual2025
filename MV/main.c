@@ -9,7 +9,6 @@
 #include "include/segmentTable.h"
 #include "include/directions.h"
 
-
 void beginExecution(FILE *file, int debug) {
     uint8_t opCode;
     char header[5] = {0};
@@ -83,6 +82,8 @@ void beginExecution(FILE *file, int debug) {
 
             uint8_t op1Bytes, op2Bytes;
             analizeInstruction(opCode, &op1Bytes, &op2Bytes);
+
+
             
             // Debug: mostrar informacion de la instruccion
             if (debug) {
@@ -93,7 +94,8 @@ void beginExecution(FILE *file, int debug) {
             uint8_t cleanOpCode = opCode & 0x1F;
             setRegister(4, cleanOpCode);
             
-            IP = IP + 1;  // Avanzamos la instruccion
+            setRegister(3,IP + op1Bytes + op2Bytes + 1);
+            IP += 1;
             
             if (opCodeExists(opCode)){
 
@@ -132,19 +134,19 @@ void beginExecution(FILE *file, int debug) {
                 
               if (op1Bytes > 0) {
                 uint8_t bytes1[3] = {0};
-                int i = 0;
-                uint8_t TOPE_IP = IP + op1Bytes;
+                int ii = 0;
+                uint8_t TOPE_IP1 = IP + op1Bytes;
 
-                while (IP < TOPE_IP) {
+                while (IP < TOPE_IP1) {
                   logicalAddress = getLogicalAddress(csValue, IP);
                   fisicalAddress = getFisicalAddress(logicalAddress);
                   readByte(fisicalAddress, &Value); //trae el dato del mbr
                   opCode = (uint8_t)(Value & 0xFF);
-                  bytes1[i] = opCode;
+                  bytes1[ii] = opCode;
                   if (debug) {
                       printf(" %02X", opCode);
                   }
-                  i++;
+                  ii++;
                   IP = IP + 1;
                 }
                 
@@ -208,20 +210,7 @@ void beginExecution(FILE *file, int debug) {
             printf("ERROR: Fallo de segmento - Direccion fisica 0x%08X invalida\n", fisicalAddress);
             setRegister(3, 0xFFFFFFFF); // Terminar ejecucion
         }
-        
-        // Verificar si se estableció terminación antes de sobrescribir IP
-        uint32_t currentIP;
-        getRegister(3, &currentIP);
-        
-        // Solo actualizar IP si no es terminación Y si no cambió durante la ejecución
-        if (currentIP != 0xFFFFFFFF) {
-            // Si el IP no cambió durante la ejecución, actualizarlo normalmente
-            if (currentIP == IPBeforeExecution) {
-                setRegister(3, IP);
-            }
-            // Si cambió (por ejemplo, en un salto), mantener el nuevo valor
-        }
-        
+
         // Actualizar IP para la siguiente iteracion
         getRegister(3, &IP);
     }

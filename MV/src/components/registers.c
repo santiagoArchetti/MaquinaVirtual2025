@@ -125,11 +125,12 @@ void getOperandName(uint32_t name) {
 }
 
 void setCondicion(uint32_t value) {
-    if ( (value >> 31) == 0x1 )
-        setRegister(17, 0x00000002);         // Setteamos el bit 1 (N = 1)
-    else 
-        if ( value == 0x0 )
-            setRegister(17, 0x00000001);     // Setteamos el bit 0 (Z = 1)
-        else
-            setRegister(17, 0x00000000);     // Apagamos los bits si es positivo
+
+	if (value == 0)
+		setRegister(17, 0x40000000);
+	else if ((value & 0x80000000u) != 0)
+		setRegister(17, 0x80000000);
+	else
+		setRegister(17, 0x0);
+
 }
