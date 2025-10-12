@@ -3,5 +3,6 @@
 
 // Operaciones sin operandos
 void op_stop(void);
+void op_ret();
 
 #endif

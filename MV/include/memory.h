@@ -23,4 +23,7 @@ void readMemory (uint8_t sizeOp, uint32_t *valueAux, uint32_t op);
 void writeMemory (uint8_t sizeOp, uint32_t aux, uint32_t op);
 void setCondicion(uint32_t value);
 int binADecimal(uint32_t op);
+void writeStack(uint32_t SP);
+void readStack(uint32_t SP);
+
 #endif

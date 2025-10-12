@@ -11,21 +11,41 @@ void initRegisters() { // inicializamos en 0 todos los registros
 }
 
 // Funcion para escribir un registro
+<<<<<<< Updated upstream
 void writeRegister(int regIndex, uint32_t value) {
+=======
+void setRegister(int8_t regIndex, uint32_t value) {
+    uint32_t aux = 0x0;
+>>>>>>> Stashed changes
     if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
         printf("Error: Invalid register index: %d\n", regIndex);
-        return;
+        setRegister(3,0xFFFFFFFF);
     }
-    registers.registerValue[regIndex] = value;
+    else {
+        aux = registers.registerValue[regIndex & 0x1F];
+        switch ( (regIndex >> 6) & 0x3 ) {
+            case 1: aux = (aux & 0xFFFFFFFFFFFF0000) | (value & 0xFFFF); break;
+            case 2: aux = (aux & 0xFFFFFFFF0000FFFF) | (value & 0xFFFF0000); break;
+            case 3: aux = (aux & 0xFFFFFFFF00000000)  | (value & 0xFFFFFFFF); break;
+        }  
+        registers.registerValue[regIndex & 0x1F] = aux;  - // o [ binADecimal(regIndex & 0x1F) ]
+    }
 }
 
 // Funcion para cargar el valor de un registro
-void getRegister(int regIndex, uint32_t* value) {
+void getRegister(int8_t regIndex, uint32_t* value) {
     if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
         printf("Error: Invalid register index: %d\n", regIndex);
-        return;
+        setRegister(3,0xFFFFFFFF);
     }
-    *value = registers.registerValue[regIndex];
+    else{
+        *value = registers.registerValue[regIndex & 0x1F];
+        switch ( (regIndex >> 6) & 0x3 ) {
+            case 1: *value &= 0xFFFF; break;
+            case 2: *value &= 0xFFFF0000; break;
+            case 3: *value &= 0xFFFFFFFF; break;
+        }
+    }    
 }
 
 int opCodeExists(uint8_t opCode){
@@ -63,13 +83,13 @@ void getOperandName(uint32_t name) {
           case 4: nameRegister = "OPC"; break;
           case 5: nameRegister = "OP1"; break;
           case 6: nameRegister = "OP2"; break;
-          case 7: nameRegister = "UNK"; break;
-          case 8: nameRegister = "UNK"; break;
-          case 9: nameRegister = "UNK"; break;
+          case 7: nameRegister = "SP"; break;
+          case 8: nameRegister = "BP"; break;
           case 10: nameRegister = "EAX"; break;
           case 11: nameRegister = "EBX"; break;
           case 12: nameRegister = "ECX"; break;
           case 13: nameRegister = "EDX"; break;
+<<<<<<< Updated upstream
           case 14: nameRegister = "EFX"; break;
           case 15: nameRegister = "AC"; break;
           case 16: nameRegister = "CC"; break;
@@ -82,12 +102,18 @@ void getOperandName(uint32_t name) {
           case 23: nameRegister = "UNK"; break;
           case 24: nameRegister = "UNK"; break;
           case 25: nameRegister = "UNK"; break;
+=======
+          case 14: nameRegister = "EEX"; break;
+          case 15: nameRegister = "EFX"; break;
+          case 16: nameRegister = "AC"; break;
+          case 17: nameRegister = "CC"; break;
+>>>>>>> Stashed changes
           case 26: nameRegister = "CS"; break;
           case 27: nameRegister = "DS"; break;
-          case 28: nameRegister = "UNK"; break;
-          case 29: nameRegister = "UNK"; break;
-          case 30: nameRegister = "UNK"; break;
-          case 31: nameRegister = "UNK"; break;
+          case 28: nameRegister = "ES"; break;
+          case 29: nameRegister = "SS"; break;
+          case 30: nameRegister = "KS"; break;
+          case 31: nameRegister = "PS"; break;
       }
       printf("%s", nameRegister);
     } else if ( (name>>24) == 0x02){

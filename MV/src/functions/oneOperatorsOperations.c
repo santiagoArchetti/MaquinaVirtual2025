@@ -237,3 +237,85 @@ void op_not(uint32_t op1) {
     setCondicion(~aux);
 }
 
+void op_push(uint32_t op1){
+    /*
+    decrementar SP en 4 (jijiji)
+    si el valor de SP < valor SS --> stack overflow (aborta ejecucion)
+    obtener el valor del operando
+    transformar valor obtenido a 4 bytes
+    almacenrar en big endian.
+    */
+
+    uint32_t SP;
+    uint32_t SS;
+    uint8_t sizeOp1 = op1 >> 24;
+
+    getRegister(7,&SP);
+    getRegister(29,&SS);
+
+    if ((SP - 4) < SS){ // si el valor es menor, es stack overflow
+        printf("ERROR: STACK OVERFLOW\n");
+        setRegister(3,0xFFFFFFFF);
+    }else{
+        uint32_t value;
+        if(sizeOp1 == 1 ){ // registro
+            int reg1 = binADecimal(op1);
+            getRegister(reg1, &value); // obtengo valor que hay en el registro de op1
+            setRegister(2,value);
+        } else
+            if (sizeOp1 == 2) { // inmediato
+                value = op1 & 0xFFFF;
+                if ( ((uint16_t)value & 0xFFFF) < 0)
+                    value |= 0xFFFF0000;
+                setRegister(2,value);   // Setteo MBR
+            }
+            else
+                if (sizeOp1 == 3){ // memoria
+                    readMemory(op1);
+                }
+
+        writeStack(SP); // guarda nuevo dato en tope de la pila
+    }
+}
+
+void op_pop(uint32_t op1){
+
+    uint32_t SP;
+    uint32_t SS;
+    uint8_t sizeOp1 = op1 >> 24;
+
+    getRegister(7,&SP);
+    getRegister(29,&SS);
+
+    if ((SP + 4) > MEMORY_SIZE){
+        printf("ERROR: STACK UNDERFLOW");
+        setRegister(3,0xFFFFFFFF);
+    }
+    else{
+        uint32_t value;
+
+        readStack(SP); // guarda en mbr tope de la pila
+
+        if (sizeOp1 == 1){ // registro
+            uint32_t reg1 = binADecimal(op1);
+            getRegister(2,&value);
+            setRegister(reg1,value);
+        }
+        else
+            if (sizeOp1 == 3) { // memoria
+                writeMemory(op1);
+            }
+            else { // no se admiten operandos inmediatos en el POP
+                printf("Operando invalido");
+                setRegister(3,0xFFFFFFFF);  // lol
+            }
+    }
+}
+
+void op_call (uint32_t op1){
+    uint32_t IP;
+    getRegister(3,&IP); // obtengo IP
+    setRegister(2,IP); // guardo valor del IP en mbr
+    op_push(IP); // pusheo IP (mando IP solo porque pide un operando, pero no es necesario, el mbr ya esta modificado)
+    op_jmp(op1); // verificar que funcione correctamente con la subrutina
+}
