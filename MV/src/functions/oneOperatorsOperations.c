@@ -6,10 +6,22 @@
 #include "../../include/twoOperatorsOperations.h"
 #include <stdio.h>
 
-
 void op_sys(uint32_t op1) {
     
     int operacionCode = op1 & 0x0000001F;
+    switch (operacionCode) {
+        case 01: sys_read(); break;
+        case 02: sys_write(); break;
+        case 03: sys_string_read(); break;
+        case 04: sys_string_write(); break;
+        case 07: sys_clear_screen(); break;
+        case 1F: sys_breakpoint(); break;
+        default: {
+            printf("Error: SYS code invalid: %u\n", op1);
+            writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
+        } break;    // el default lleva break?
+    }
+    /*
     if (operacionCode == 01) {
         sys_read();
     } else if (operacionCode == 02) {
@@ -17,7 +29,7 @@ void op_sys(uint32_t op1) {
     } else {
         printf("Error: SYS code invalid: %u\n", op1);
         writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
-    }
+    }*/
 }
 
 void sys_read() {
@@ -159,6 +171,32 @@ void sys_write() {
             printf("Error: Interpretation mode invalid: 0x%02X\n", eax);
             writeRegister(3, 0xFFFFFFFF);
             return;
+        }
+    }
+}
+
+void sys_string_read(){
+
+}
+
+void sys_string_write(){
+
+}
+
+void sys_clear_screen(){
+    system("cls");
+}
+
+void sys_breakpoint(){
+    char stop;
+    scanf("%c", &stop);
+    switch (stop) {
+        case 'q': setRegister(3,0xFFFFFFFF); break;
+        case 'g': flag = 0;
+        case '': flag = 1;
+        default: {
+            printf("ERROR: el caracter (%c) ingresado es invalido",stop);
+            setRegister(3,0xFFFFFFFF);
         }
     }
 }
@@ -314,8 +352,8 @@ void op_pop(uint32_t op1){
 
 void op_call (uint32_t op1){
     uint32_t IP;
-    getRegister(3,&IP); // obtengo IP
-    setRegister(2,IP); // guardo valor del IP en mbr
-    op_push(IP); // pusheo IP (mando IP solo porque pide un operando, pero no es necesario, el mbr ya esta modificado)
-    op_jmp(op1); // verificar que funcione correctamente con la subrutina
+    getRegister(3,&IP);     // obtengo IP
+    setRegister(2,IP);      // guardo valor del IP en mbr
+    op_push(IP);            // pusheo IP (mando IP solo porque pide un operando, pero no es necesario, el mbr ya esta modificado)
+    op_jmp(op1);            // verificar que funcione correctamente con la subrutina
 }

@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+extern int flag;
+
 // Operaciones con un solo operando
 void op_sys(uint32_t op1);
 void op_jmp(uint32_t op1);

@@ -11,12 +11,8 @@ void initRegisters() { // inicializamos en 0 todos los registros
 }
 
 // Funcion para escribir un registro
-<<<<<<< Updated upstream
-void writeRegister(int regIndex, uint32_t value) {
-=======
 void setRegister(int8_t regIndex, uint32_t value) {
     uint32_t aux = 0x0;
->>>>>>> Stashed changes
     if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
         printf("Error: Invalid register index: %d\n", regIndex);
         setRegister(3,0xFFFFFFFF);
@@ -25,8 +21,8 @@ void setRegister(int8_t regIndex, uint32_t value) {
         aux = registers.registerValue[regIndex & 0x1F];
         switch ( (regIndex >> 6) & 0x3 ) {
             case 1: aux = (aux & 0xFFFFFFFFFFFF0000) | (value & 0xFFFF); break;
-            case 2: aux = (aux & 0xFFFFFFFF0000FFFF) | (value & 0xFFFF0000); break;
-            case 3: aux = (aux & 0xFFFFFFFF00000000)  | (value & 0xFFFFFFFF); break;
+            case 2: aux = (aux & 0xFFFFFFFF0000FFFF) | (value & 0xFFFF0000); break; // o aux = (aux & 0xFFFFFFFF0000FFFF) | (value << 8); break;
+            case 3: aux = (aux & 0xFFFFFFFF00000000)  | (value & 0xFFFFFFFF); break; 
         }  
         registers.registerValue[regIndex & 0x1F] = aux;  - // o [ binADecimal(regIndex & 0x1F) ]
     }
@@ -71,56 +67,74 @@ int binADecimal(uint32_t op) {
 
 void getOperandName(uint32_t name) {
  
-      if ( (name>>24) == 0x01){
-      // Tipo registro - imprimir nombre del registro
-      char* nameRegister = "UNK";
-      int regIndex = name & 0x0000001F;
-      switch(regIndex) {
-          case 0: nameRegister = "LAR"; break;
-          case 1: nameRegister = "MAR"; break;
-          case 2: nameRegister = "MBR"; break;
-          case 3: nameRegister = "IP"; break;
-          case 4: nameRegister = "OPC"; break;
-          case 5: nameRegister = "OP1"; break;
-          case 6: nameRegister = "OP2"; break;
-          case 7: nameRegister = "SP"; break;
-          case 8: nameRegister = "BP"; break;
-          case 10: nameRegister = "EAX"; break;
-          case 11: nameRegister = "EBX"; break;
-          case 12: nameRegister = "ECX"; break;
-          case 13: nameRegister = "EDX"; break;
-<<<<<<< Updated upstream
-          case 14: nameRegister = "EFX"; break;
-          case 15: nameRegister = "AC"; break;
-          case 16: nameRegister = "CC"; break;
-          case 17: nameRegister = "UNK"; break;
-          case 18: nameRegister = "UNK"; break;
-          case 19: nameRegister = "UNK"; break;
-          case 20: nameRegister = "UNK"; break;
-          case 21: nameRegister = "UNK"; break;
-          case 22: nameRegister = "UNK"; break;
-          case 23: nameRegister = "UNK"; break;
-          case 24: nameRegister = "UNK"; break;
-          case 25: nameRegister = "UNK"; break;
-=======
-          case 14: nameRegister = "EEX"; break;
-          case 15: nameRegister = "EFX"; break;
-          case 16: nameRegister = "AC"; break;
-          case 17: nameRegister = "CC"; break;
->>>>>>> Stashed changes
-          case 26: nameRegister = "CS"; break;
-          case 27: nameRegister = "DS"; break;
-          case 28: nameRegister = "ES"; break;
-          case 29: nameRegister = "SS"; break;
-          case 30: nameRegister = "KS"; break;
-          case 31: nameRegister = "PS"; break;
-      }
-      printf("%s", nameRegister);
-    } else if ( (name>>24) == 0x02){
-      // Tipo inmediato 
-      printf("%04X", (uint16_t)(name & 0x0000FFFF));
+    if ( (name >> 24) == 0x01){
+        // Tipo registro - imprimir nombre del registro
+        char* nameRegister = "UNK";
+        int regIndex = name & 0x0000001F;
+        switch ( (name >> 6) & 0x3 ){
+            case 0:
+                switch(regIndex) {
+                    case 0: nameRegister = "LAR"; break;
+                    case 1: nameRegister = "MAR"; break;
+                    case 2: nameRegister = "MBR"; break;
+                    case 3: nameRegister = "IP"; break;
+                    case 4: nameRegister = "OPC"; break;
+                    case 5: nameRegister = "OP1"; break;
+                    case 6: nameRegister = "OP2"; break;
+                    case 7: nameRegister = "SP"; break;
+                    case 8: nameRegister = "BP"; break;
+                    case 10: nameRegister = "EAX"; break;
+                    case 11: nameRegister = "EBX"; break;
+                    case 12: nameRegister = "ECX"; break;
+                    case 13: nameRegister = "EDX"; break;
+                    case 14: nameRegister = "EEX"; break;
+                    case 15: nameRegister = "EFX"; break;
+                    case 16: nameRegister = "AC"; break;
+                    case 17: nameRegister = "CC"; break;
+                    case 26: nameRegister = "CS"; break;
+                    case 27: nameRegister = "DS"; break;
+                    case 28: nameRegister = "ES"; break;
+                    case 29: nameRegister = "SS"; break;
+                    case 30: nameRegister = "KS"; break;
+                    case 31: nameRegister = "PS"; break;
+                }; break;
+            case 1:
+                switch(regIndex) {
+                    case 10: nameRegister = "AL"; break;
+                    case 11: nameRegister = "BL"; break;
+                    case 12: nameRegister = "CL"; break;
+                    case 13: nameRegister = "DL"; break;
+                    case 14: nameRegister = "EL"; break;
+                    case 15: nameRegister = "FL"; break;
+                };break;
+            case 2:
+                switch(regIndex) {
+                    case 10: nameRegister = "AH"; break;
+                    case 11: nameRegister = "BH"; break;
+                    case 12: nameRegister = "CH"; break;
+                    case 13: nameRegister = "DH"; break;
+                    case 14: nameRegister = "EH"; break;
+                    case 15: nameRegister = "FH"; break;
+                };break;
+            case 3:
+                switch(regIndex) {
+                    case 10: nameRegister = "AX"; break;
+                    case 11: nameRegister = "BX"; break;
+                    case 12: nameRegister = "CX"; break;
+                    case 13: nameRegister = "DX"; break;
+                    case 14: nameRegister = "EX"; break;
+                    case 15: nameRegister = "FX"; break;
+                };break;
+        }
+        printf("%s", nameRegister);
+    } else if ( (name >> 24) == 0x02){
+        // Tipo inmediato 
+        printf("%04X", (uint16_t)(name & 0x0000FFFF));
     } else {
-      // Tipo memoria - entre [ ]
-      printf("[%06X]", name & 0x00FFFFFF);
+        // Tipo memoria - entre [ ]
+        //printf("[%06X]", name & 0x00FFFFFF);
+        printf("[");
+        getOperandName( ((name >> 16) & 0xFFFF) | 0x0001000000000000 );
+        printf(" + %04X]", (uint16_t)(name & 0xFFFFFFFF));
     }
 }

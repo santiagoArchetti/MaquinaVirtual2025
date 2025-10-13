@@ -9,7 +9,6 @@
 #include "include/segmentTable.h"
 #include "include/directions.h"
 
-
 void beginExecution(FILE *file, int debug) {
     uint8_t opCode;
     char header[5] = {0};
@@ -186,6 +185,8 @@ void beginExecution(FILE *file, int debug) {
                 } else{
                   opTable0[cleanOpCode]();
                 }
+                if (flag)
+                    op_sys(0xFF);
             } else{
               writeRegister(3,0xFFFFFFFF);
             }
