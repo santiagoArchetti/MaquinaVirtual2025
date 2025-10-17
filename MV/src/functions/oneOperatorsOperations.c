@@ -131,7 +131,7 @@ void sys_write() {
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
 
-    printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %04X\n",            edx, cantidad, tamano_celda);
+    printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %04X\n", edx, cantidad, tamano_celda);
  
     for (int i = 0; i < cantidad; i++) {
         uint32_t direccion_actual = edx + (i * tamano_celda);
@@ -187,7 +187,26 @@ void sys_write() {
 }
 
 void sys_string_read(){
-
+    uint32_t edx,ecx;
+    getRegister(12,&ecx);
+    getRegister(13,&edx);
+    uint32_t direccion_actual = edx;    // probablemente no necesario
+    uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
+        
+    if (isValidAddress(direccion_fisica, ecx + 1, (uint16_t)(edx >> 16) )) {  // Vemos si hay espacio sufciente para escribir
+        char car;
+        for (int i = 0; i <= ecx ; i++){
+            scanf("%c",&car);
+            writeByte(direccion_fisica + i, car);
+            // Por si hay que hacer manejo de la memoria
+            // memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
+            // setRegister(2, car);
+        }
+        writeByte(direccion_fisica + ecx + 1,'');   // Le agregamos el caracter nulo
+    } else {
+        printf("Error: Espacio en memoria insuficiente.");
+        setRegister(3,0xFFFFFFFF);
+    }
 }
 
 void sys_string_write(){

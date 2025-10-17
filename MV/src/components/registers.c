@@ -20,11 +20,11 @@ void setRegister(int8_t regIndex, uint32_t value) {
     else {
         aux = registers.registerValue[regIndex & 0x1F];
         switch ( (regIndex >> 6) & 0x3 ) {
-            case 1: aux = (aux & 0xFFFFFFFFFFFF0000) | (value & 0xFFFF); break;
-            case 2: aux = (aux & 0xFFFFFFFF0000FFFF) | (value & 0xFFFF0000); break; // o aux = (aux & 0xFFFFFFFF0000FFFF) | (value << 8); break;
-            case 3: aux = (aux & 0xFFFFFFFF00000000)  | (value & 0xFFFFFFFF); break; 
+            case 1: value = (aux & 0xFFFFFFFFFFFF0000) | (value & 0xFFFF); break;
+            case 2: value = (aux & 0xFFFFFFFF0000FFFF) | (value & 0xFFFF0000); break; // o aux = (aux & 0xFFFFFFFF0000FFFF) | (value << 8); break;
+            case 3: value = (aux & 0xFFFFFFFF00000000)  | (value & 0xFFFFFFFF); break; 
         }  
-        registers.registerValue[regIndex & 0x1F] = aux;  - // o [ binADecimal(regIndex & 0x1F) ]
+        registers.registerValue[regIndex & 0x1F] = value; // o [ binADecimal(regIndex & 0x1F) ]
     }
 }
 
@@ -38,7 +38,10 @@ void getRegister(int8_t regIndex, uint32_t* value) {
         *value = registers.registerValue[regIndex & 0x1F];
         switch ( (regIndex >> 6) & 0x3 ) {
             case 1: *value &= 0xFFFF; break;
-            case 2: *value &= 0xFFFF0000; break;
+            case 2: {
+                *value &= 0xFFFF0000; break;
+                *value = *value >> 8;
+            }
             case 3: *value &= 0xFFFFFFFF; break;
         }
     }    
@@ -72,7 +75,7 @@ void getOperandName(uint32_t name) {
         char* nameRegister = "UNK";
         int regIndex = name & 0x0000001F;
         switch ( (name >> 6) & 0x3 ){
-            case 0:
+            case 0x0:
                 switch(regIndex) {
                     case 0: nameRegister = "LAR"; break;
                     case 1: nameRegister = "MAR"; break;
@@ -98,7 +101,7 @@ void getOperandName(uint32_t name) {
                     case 30: nameRegister = "KS"; break;
                     case 31: nameRegister = "PS"; break;
                 }; break;
-            case 1:
+            case 0x1:
                 switch(regIndex) {
                     case 10: nameRegister = "AL"; break;
                     case 11: nameRegister = "BL"; break;
@@ -107,7 +110,7 @@ void getOperandName(uint32_t name) {
                     case 14: nameRegister = "EL"; break;
                     case 15: nameRegister = "FL"; break;
                 };break;
-            case 2:
+            case 0x2:
                 switch(regIndex) {
                     case 10: nameRegister = "AH"; break;
                     case 11: nameRegister = "BH"; break;
@@ -116,7 +119,7 @@ void getOperandName(uint32_t name) {
                     case 14: nameRegister = "EH"; break;
                     case 15: nameRegister = "FH"; break;
                 };break;
-            case 3:
+            case 0x3:
                 switch(regIndex) {
                     case 10: nameRegister = "AX"; break;
                     case 11: nameRegister = "BX"; break;
