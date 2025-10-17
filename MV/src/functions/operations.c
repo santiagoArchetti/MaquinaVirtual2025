@@ -75,8 +75,12 @@ void initOpTable(void) {
     opTable1[0x06] = op_jnp;  // JNP
     opTable1[0x07] = op_jnn;  // JNN
     opTable1[0x08] = op_not;  // NOT
+    opTable1[0x0B] = op_push; // PUSH
+    opTable1[0x0C] = op_pop;  // POP
+    opTable1[0x0D] = op_call; // CALL
 
     // Operaciones sin operandos
+    opTable1[0x0E] = op_ret;  // RET
     opTable0[0x0F] = op_stop; // STOP
 }
 
@@ -108,12 +112,14 @@ const char* getInstructionMnemonic(uint8_t opCode, uint8_t op1Bytes, uint8_t op2
         case 0x06: return "JNP";
         case 0x07: return "JNN";
         case 0x08: return "NOT";
+        case 0x0B: return "PUSH";
+        case 0x0C: return "POP";
+        case 0x0D: return "CALL";
+        case 0x0E: return "RET";
         case 0x0F: return "STOP";
         default: return "UNK";
     }
 }
-
-
 
 /* ejemplo de uso fuera del archivo operations.c
 uint8_t opcode = memoria[ip]; // leiste un byte de memoria que corresponde al opcode

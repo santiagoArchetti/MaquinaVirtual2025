@@ -13,9 +13,16 @@ void op_jnz(uint32_t op1);
 void op_jnp(uint32_t op1);
 void op_jnn(uint32_t op1);
 void op_not(uint32_t op1);
+void op_push(uint32_t op1);
+void op_pop(uint32_t op1);
+void op_call(uint32_t op1);
 
 // Funciones auxiliares para llamadas al sistema
 void sys_read(void);
 void sys_write(void);
+void sys_string_read();
+void sys_string_write();
+void sys_clear_screen();
+void sys_breakpoint();
 
 #endif

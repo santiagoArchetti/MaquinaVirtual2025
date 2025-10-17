@@ -16,14 +16,13 @@ void op_mov(uint32_t op1, uint32_t op2) {
     // Obtenemos el tamaño del operando 1
     uint8_t sizeOp1 = op1 >> 24;
 
-
-    if ( sizeOp1 == 2 ){                            // Inmediato en el primer operando
+    if ( sizeOp1 == 2 ){                                // Inmediato en el primer operando
         setRegister(3,0xFFFFFFFF);
     } else {
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         uint8_t sizeOp2 = op2 >> 24;        
-        if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
+        if ( sizeOp1 == 1 && sizeOp2 == 1 ){            // De registro a registro
 
             uint32_t value;
             getRegister(reg2,&value);

@@ -5,11 +5,24 @@
 #include "../../include/directions.h"
 #include "../../include/twoOperatorsOperations.h"
 #include <stdio.h>
-
+#include <stdlib.h>
 
 void op_sys(uint32_t op1) {
     
     int operacionCode = op1 & 0x0000001F;
+    switch (operacionCode) {
+        case 0x01: sys_read(); break;
+        case 0x02: sys_write(); break;
+        case 0x03: sys_string_read(); break;
+        case 0x04: sys_string_write(); break;
+        case 0x07: sys_clear_screen(); break;
+        case 0x1F: sys_breakpoint(); break;
+        default: {
+            printf("Error: SYS code invalid: %u\n", op1);
+            setRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
+        } break;    // el default lleva break?
+    }
+    /*
     if (operacionCode == 01) {
         sys_read();
     } else if (operacionCode == 02) {
@@ -17,7 +30,7 @@ void op_sys(uint32_t op1) {
     } else {
         printf("Error: SYS code invalid: %u\n", op1);
         setRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
-    }
+    }*/
 }
 
 void sys_read() {
@@ -119,7 +132,7 @@ void sys_write() {
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
 
-    printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %04X\n",            edx, cantidad, tamano_celda);
+    printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %04X\n", edx, cantidad, tamano_celda);
  
     for (int i = 0; i < cantidad; i++) {
         uint32_t direccion_actual = edx + (i * tamano_celda);
@@ -169,6 +182,72 @@ void sys_write() {
             printf("\n");
         }else {
             printf("Error: formato de escritura invalido");
+            setRegister(3,0xFFFFFFFF);
+        }
+    }
+}
+
+void sys_string_read(){
+    
+    uint32_t edx,ecx;
+    getRegister(12,&ecx);
+    getRegister(13,&edx);
+    uint32_t direccion_actual = edx;    // probablemente no necesario
+    uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
+        
+    if (isValidAddress(direccion_fisica, ecx + 1, (uint16_t)(edx >> 16) )) {  // Vemos si hay espacio sufciente para escribir
+        char car;
+        for (int i = 0; i <= ecx ; i++){
+            scanf("%c",&car);
+            writeByte(direccion_fisica + i, car);
+            // Por si hay que hacer manejo de la memoria
+            memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
+            setRegister(2, car);
+        }
+        writeByte(direccion_fisica + ecx + 1,'\0');   // Le agregamos el caracter nulo
+    } else {
+        printf("Error: Espacio en memoria insuficiente.");
+        setRegister(3,0xFFFFFFFF);
+    }
+}
+
+void sys_string_write(){
+
+    uint32_t edx;
+    getRegister(13,&edx);
+    uint32_t direccion_actual = edx;    // probablemente no necesario
+    uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
+    
+    char car;
+    if (isValidAddress(direccion_fisica, 1, (uint16_t)(edx >> 16) )){
+        int i = 0;
+        while (car != '\0') {
+            readByte((direccion_fisica + i), &car);
+            printf("%c",car);
+            i++;
+            memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
+            setRegister(2, car);
+        }
+    } else {
+        printf("ERROR: direccion fisica invalida");
+        setRegister(3,0xFFFFFFFF);
+    }
+    
+}
+
+void sys_clear_screen(){
+    system("clear");
+}
+
+void sys_breakpoint(){
+    char stop;
+    scanf("%c", &stop);
+    switch (stop) {
+        case 'q': setRegister(3,0xFFFFFFFF); break;
+        case 'g': flag = 0;
+        case '\0': flag = 1;
+        default: {
+            printf("ERROR: el caracter (%c) ingresado es invalido",stop);
             setRegister(3,0xFFFFFFFF);
         }
     }
@@ -252,3 +331,85 @@ void op_not(uint32_t op1) {
     }
 }
 
+void op_push(uint32_t op1){
+    /*
+    decrementar SP en 4 (jijiji)
+    si el valor de SP < valor SS --> stack overflow (aborta ejecucion)
+    obtener el valor del operando
+    transformar valor obtenido a 4 bytes
+    almacenrar en big endian.
+    */
+
+    uint32_t SP;
+    uint32_t SS;
+    uint8_t sizeOp1 = op1 >> 24;
+
+    getRegister(7,&SP);
+    getRegister(29,&SS);
+
+    if ((SP - 4) < SS){ // si el valor es menor, es stack overflow
+        printf("ERROR: STACK OVERFLOW\n");
+        setRegister(3,0xFFFFFFFF);
+    }else{
+        uint32_t value;
+        if(sizeOp1 == 1 ){ // registro
+            int reg1 = binADecimal(op1);
+            getRegister(reg1, &value); // obtengo valor que hay en el registro de op1
+            setRegister(2,value);
+        } else
+            if (sizeOp1 == 2) { // inmediato
+                value = op1 & 0xFFFF;
+                if ( ((uint16_t)value & 0xFFFF) < 0)
+                    value |= 0xFFFF0000;
+                setRegister(2,value);   // Setteo MBR
+            }
+            else
+                if (sizeOp1 == 3){ // memoria
+                    readMemory(op1);
+                }
+
+        writeStack(SP); // guarda nuevo dato en tope de la pila
+    }
+}
+
+void op_pop(uint32_t op1){
+
+    uint32_t SP;
+    uint32_t SS;
+    uint8_t sizeOp1 = op1 >> 24;
+
+    getRegister(7,&SP);
+    getRegister(29,&SS);
+
+    if ((SP + 4) > MEMORY_SIZE){
+        printf("ERROR: STACK UNDERFLOW");
+        setRegister(3,0xFFFFFFFF);
+    }
+    else{
+        uint32_t value;
+
+        readStack(SP); // guarda en mbr tope de la pila
+
+        if (sizeOp1 == 1){ // registro
+            uint32_t reg1 = binADecimal(op1);
+            getRegister(2,&value);
+            setRegister(reg1,value);
+        }
+        else
+            if (sizeOp1 == 3) { // memoria
+                writeMemory(op1);
+            }
+            else { // no se admiten operandos inmediatos en el POP
+                printf("Operando invalido");
+                setRegister(3,0xFFFFFFFF);  // lol
+            }
+    }
+}
+
+void op_call (uint32_t op1){
+    uint32_t IP;
+    getRegister(3,&IP);     // obtengo IP
+    setRegister(2,IP);      // guardo valor del IP en mbr
+    op_push(IP);            // pusheo IP (mando IP solo porque pide un operando, pero no es necesario, el mbr ya esta modificado)
+    op_jmp(op1);            // verificar que funcione correctamente con la subrutina
+}

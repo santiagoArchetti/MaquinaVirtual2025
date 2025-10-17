@@ -199,13 +199,15 @@ void beginExecution(FILE *file, int debug) {
                 } else{
                   opTable0[cleanOpCode]();
                 }
+                if (flag){
+                    opTable1[0x00](0xFF);
+                }
             } else{
               setRegister(3,0xFFFFFFFF);
               printf("\n=========================================\n");
               printf("             INVALID OPCODE           \n");
             
             }
-
         } else {  // Fallo de segmento
             printf("ERROR: Fallo de segmento - Direccion fisica 0x%08X invalida\n", fisicalAddress);
             setRegister(3, 0xFFFFFFFF); // Terminar ejecucion

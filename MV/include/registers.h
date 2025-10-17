@@ -11,11 +11,13 @@ typedef struct {
 
 extern Registers registers;
 
-void setRegister(int register, uint32_t value);  
-void getRegister(int register, uint32_t* value);
+void setRegister(int8_t regIndex, uint32_t value);
+void getRegister(int8_t regIndex, uint32_t* value);
 void initRegisters();  // funcion extra para inicializar
 int opCodeExists(uint8_t opCode);
 int binADecimal(uint32_t op);
 void setCondicion(uint32_t value);
 void getOperandName(uint32_t name);
+void setCondicion(uint32_t value);
+
 #endif
