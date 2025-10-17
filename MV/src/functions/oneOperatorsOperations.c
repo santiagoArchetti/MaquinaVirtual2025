@@ -6,6 +6,7 @@
 #include "../../include/twoOperatorsOperations.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 void op_sys(uint32_t op1) {
     

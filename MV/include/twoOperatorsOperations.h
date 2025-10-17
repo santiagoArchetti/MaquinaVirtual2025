@@ -20,8 +20,4 @@ void op_ldl(uint32_t op1, uint32_t op2);
 void op_ldh(uint32_t op1, uint32_t op2);
 void op_rnd(uint32_t op1, uint32_t op2);
 
-<<<<<<< HEAD
-
-=======
->>>>>>> prueba
 #endif

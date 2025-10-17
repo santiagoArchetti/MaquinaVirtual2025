@@ -1,8 +1,8 @@
 #include "../../include/operations.h"
-#include <stdio.h>
 #include "../../include/twoOperatorsOperations.h"
 #include "../../include/oneOperatorsOperations.h"
 #include "../../include/noOperatorsOperations.h"
+#include <stdio.h>
 
 OpFunc0 opTable0[256];  // Operaciones sin operandos
 OpFunc1 opTable1[256];  // Operaciones con 1 operando
