@@ -5,6 +5,7 @@
 #include "../../include/directions.h"
 #include "../../include/twoOperatorsOperations.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 void op_sys(uint32_t op1) {
     
@@ -18,7 +19,7 @@ void op_sys(uint32_t op1) {
         case 0x1F: sys_breakpoint(); break;
         default: {
             printf("Error: SYS code invalid: %u\n", op1);
-            writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
+            setRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
         } break;    // el default lleva break?
     }
     /*
@@ -28,7 +29,7 @@ void op_sys(uint32_t op1) {
         sys_write();
     } else {
         printf("Error: SYS code invalid: %u\n", op1);
-        writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
+        setRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
     }*/
 }
 
@@ -187,6 +188,7 @@ void sys_write() {
 }
 
 void sys_string_read(){
+    
     uint32_t edx,ecx;
     getRegister(12,&ecx);
     getRegister(13,&edx);
@@ -199,10 +201,10 @@ void sys_string_read(){
             scanf("%c",&car);
             writeByte(direccion_fisica + i, car);
             // Por si hay que hacer manejo de la memoria
-            // memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
-            // setRegister(2, car);
+            memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
+            setRegister(2, car);
         }
-        writeByte(direccion_fisica + ecx + 1,'');   // Le agregamos el caracter nulo
+        writeByte(direccion_fisica + ecx + 1,'\0');   // Le agregamos el caracter nulo
     } else {
         printf("Error: Espacio en memoria insuficiente.");
         setRegister(3,0xFFFFFFFF);
@@ -211,10 +213,30 @@ void sys_string_read(){
 
 void sys_string_write(){
 
+    uint32_t edx;
+    getRegister(13,&edx);
+    uint32_t direccion_actual = edx;    // probablemente no necesario
+    uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
+    
+    char car;
+    if (isValidAddress(direccion_fisica, 1, (uint16_t)(edx >> 16) )){
+        int i = 0;
+        while (car != '\0') {
+            readByte((direccion_fisica + i), &car);
+            printf("%c",car);
+            i++;
+            memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
+            setRegister(2, car);
+        }
+    } else {
+        printf("ERROR: direccion fisica invalida");
+        setRegister(3,0xFFFFFFFF);
+    }
+    
 }
 
 void sys_clear_screen(){
-    system("cls");
+    system("clear");
 }
 
 void sys_breakpoint(){
@@ -223,7 +245,7 @@ void sys_breakpoint(){
     switch (stop) {
         case 'q': setRegister(3,0xFFFFFFFF); break;
         case 'g': flag = 0;
-        case '': flag = 1;
+        case '\0': flag = 1;
         default: {
             printf("ERROR: el caracter (%c) ingresado es invalido",stop);
             setRegister(3,0xFFFFFFFF);

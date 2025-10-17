@@ -52,7 +52,7 @@ int opCodeExists(uint8_t opCode){
     if ( ( opCode >= 0x10 && opCode <= 0x1F ) || ( opCode >= 0x00 && opCode <= 0x08 ) || opCode == 0x0F)
         return 1;
     else{
-        writeRegister(3,0xFFFFFFFF);
+        setRegister(3,0xFFFFFFFF);
         return 0;
     }
 }
@@ -73,7 +73,7 @@ void getOperandName(uint32_t name) {
     if ( (name >> 24) == 0x01){
         // Tipo registro - imprimir nombre del registro
         char* nameRegister = "UNK";
-        int regIndex = name & 0x0000001F;
+        int regIndex = name & 0x1F;
         switch ( (name >> 6) & 0x3 ){
             case 0x0:
                 switch(regIndex) {
@@ -133,11 +133,22 @@ void getOperandName(uint32_t name) {
     } else if ( (name >> 24) == 0x02){
         // Tipo inmediato 
         printf("%04X", (uint16_t)(name & 0x0000FFFF));
-    } else {
+    } else if ( (name >> 24) == 0x03){
         // Tipo memoria - entre [ ]
         //printf("[%06X]", name & 0x00FFFFFF);
         printf("[");
         getOperandName( ((name >> 16) & 0xFFFF) | 0x0001000000000000 );
         printf(" + %04X]", (uint16_t)(name & 0xFFFFFFFF));
     }
+}
+
+void setCondicion(uint32_t value) {
+
+	if (value == 0)
+		setRegister(17, 0x40000000);
+	else if ((value & 0x80000000u) != 0)
+		setRegister(17, 0x80000000);
+	else
+		setRegister(17, 0x0);
+
 }

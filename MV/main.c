@@ -45,9 +45,9 @@ void beginExecution(FILE *file, int debug) {
         writeByte(i, opCode);
     }
 
-    writeRegister(26, 0x00000000);
-    writeRegister(27, 0x00010000);
-    writeRegister(3, 0x00000000);
+    setRegister(26, 0x00000000);
+    setRegister(27, 0x00010000);
+    setRegister(3, 0x00000000);
 
     uint16_t baseCodeSegment, codeSegmentValueLength;
     uint32_t csValue;
@@ -70,14 +70,20 @@ void beginExecution(FILE *file, int debug) {
     uint32_t logicalAddress, fisicalAddress;
 
     while (IP < baseCodeSegment + codeSegmentValueLength && IP >= baseCodeSegment && IP != 0xFFFFFFFF) {
-
-        getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode,1);
+        logicalAddress = getLogicalAddress(csValue, IP);
+        fisicalAddress = getFisicalAddress(logicalAddress);
+        // Guardar IP antes de ejecutar la operación
+        uint32_t IPBeforeExecution = IP;
         
         if (isValidAddress(fisicalAddress, 1, csValue)) {
-            readByte(fisicalAddress, &opCode);
+            uint8_t Value;
+            readByte(fisicalAddress, &Value); //trae el dato del mbr
+            opCode = (uint8_t)(Value & 0xFF);
 
             uint8_t op1Bytes, op2Bytes;
             analizeInstruction(opCode, &op1Bytes, &op2Bytes);
+
+
             
             // Debug: mostrar informacion de la instruccion
             if (debug) {
@@ -86,9 +92,11 @@ void beginExecution(FILE *file, int debug) {
             }
             
             uint8_t cleanOpCode = opCode & 0x1F;
-            writeRegister(4, cleanOpCode);
+            setRegister(4, cleanOpCode);
             
-            IP = IP + 1;  // Avanzamos la instruccion
+            setRegister(3,IP + op1Bytes + op2Bytes + 1);
+            IP += 1;
+            
             if (opCodeExists(opCode)){
 
               uint32_t operandA = 0, operandB = 0;
@@ -99,7 +107,10 @@ void beginExecution(FILE *file, int debug) {
 
                 uint8_t TOPE_IP = IP + op2Bytes;
                 while (IP < TOPE_IP) {
-                  getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode,1);
+                  logicalAddress = getLogicalAddress(csValue, IP);
+                  fisicalAddress = getFisicalAddress(logicalAddress);
+                  readByte(fisicalAddress, &Value); //trae el dato del mbr
+                  opCode = (uint8_t)(Value & 0xFF);
                   bytes2[i] = opCode;
                   if (debug) {
                       printf(" %02X", opCode);
@@ -116,23 +127,26 @@ void beginExecution(FILE *file, int debug) {
                   operandB = ( (uint32_t) (bytes2[0] << 16) ) | ( (uint16_t) (bytes2[1] << 8) )| bytes2[2];
                 }
                 operandB = ( (uint32_t) op2Bytes << 24 ) | operandB;   // Asignacion del codigo de operado
-                writeRegister(6, operandB);
+                setRegister(6, operandB);
               }  
 
               
                 
               if (op1Bytes > 0) {
                 uint8_t bytes1[3] = {0};
-                int i = 0;
-                uint8_t TOPE_IP = IP + op1Bytes;
+                int ii = 0;
+                uint8_t TOPE_IP1 = IP + op1Bytes;
 
-                while (IP < TOPE_IP) {
-                  getMemoryAccess(csValue, IP, &logicalAddress, &fisicalAddress, &opCode,1);
-                  bytes1[i] = opCode;
+                while (IP < TOPE_IP1) {
+                  logicalAddress = getLogicalAddress(csValue, IP);
+                  fisicalAddress = getFisicalAddress(logicalAddress);
+                  readByte(fisicalAddress, &Value); //trae el dato del mbr
+                  opCode = (uint8_t)(Value & 0xFF);
+                  bytes1[ii] = opCode;
                   if (debug) {
                       printf(" %02X", opCode);
                   }
-                  i++;
+                  ii++;
                   IP = IP + 1;
                 }
                 
@@ -144,7 +158,7 @@ void beginExecution(FILE *file, int debug) {
                   operandA = ( (uint32_t) (bytes1[0] << 16) ) | ( (uint16_t) (bytes1[1] << 8) ) | bytes1[2];
                 }
                 operandA = ( (uint32_t) op1Bytes << 24 ) | operandA;   // Asignacion del codigo de operado
-                writeRegister(6, operandA);
+                setRegister(5, operandA);
               }
               
               // Debug: mostrar mnemonico y ejecutar operacion 
@@ -185,17 +199,19 @@ void beginExecution(FILE *file, int debug) {
                 } else{
                   opTable0[cleanOpCode]();
                 }
-                if (flag)
-                    op_sys(0xFF);
+                if (flag){
+                    opTable1[0x00](0xFF);
+                }
             } else{
-              writeRegister(3,0xFFFFFFFF);
+              setRegister(3,0xFFFFFFFF);
+              printf("\n=========================================\n");
+              printf("             INVALID OPCODE           \n");
+            
             }
-
         } else {  // Fallo de segmento
             printf("ERROR: Fallo de segmento - Direccion fisica 0x%08X invalida\n", fisicalAddress);
-            writeRegister(3, 0xFFFFFFFF); // Terminar ejecucion
+            setRegister(3, 0xFFFFFFFF); // Terminar ejecucion
         }
-        writeRegister(3, IP);
 
         // Actualizar IP para la siguiente iteracion
         getRegister(3, &IP);
@@ -203,18 +219,18 @@ void beginExecution(FILE *file, int debug) {
     
 
     getRegister(3, &IP);
-    if (debug) {
-        printf("==========================================\n");
-        printf("           END OF DISASSEMBLER           \n");
+    if (debug && IP != 0xFFFFFFFF	) {
+        printf("=========================================\n");
+        printf("           END OF DISASSEMBLER          \n");
         printf("==========================================\n");
     } else {
         if (IP == 0xFFFFFFFF) {
-            printf("==========================================\n");
+            printf("=========================================\n");
             printf("           EXECUTION TERMINATED           \n");
             printf("==========================================\n");
         } else {
             printf("==========================================\n");
-            printf("        EXECUTION COMPLETED - IP          \n");
+            printf("        EXECUTION TERMINATED - IP          \n");
             printf("          outside code segment             \n");
             printf("==========================================\n");
         }
@@ -225,7 +241,7 @@ void beginExecution(FILE *file, int debug) {
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         printf("==========================================\n");
-        printf("              VMX25 EMULATOR              \n");
+        printf("              VMX25 EMULATOR MACHINE              \n");
         printf("==========================================\n");
         printf("Usage: %s <file.vmx> [-d]\n", argv[0]);
         printf("  -d: Debug mode (disassembler)\n");
@@ -245,6 +261,12 @@ int main(int argc, char* argv[]) {
     
     beginExecution(file, debug);
     
+    // Liberar memoria de la memoria
     fclose(file);
     return 0;
 }
+
+
+/*
+gcc -o vmx.exe main.c src/components/memory.c src/components/registers.c src/components/segmentTable.c src/functions/directions.c src/functions/operations.c src/functions/noOperatorOperations.c src/functions/oneOperatorsOperations.c src/functions/twoOperatorsOperations.c
+*/

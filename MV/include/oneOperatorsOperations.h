@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-extern int flag;
-
 // Operaciones con un solo operando
 void op_sys(uint32_t op1);
 void op_jmp(uint32_t op1);
@@ -22,5 +20,9 @@ void op_call(uint32_t op1);
 // Funciones auxiliares para llamadas al sistema
 void sys_read(void);
 void sys_write(void);
+void sys_string_read();
+void sys_string_write();
+void sys_clear_screen();
+void sys_breakpoint();
 
 #endif

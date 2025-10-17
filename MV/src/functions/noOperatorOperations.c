@@ -1,10 +1,11 @@
 #include "../../include/noOperatorsOperations.h"
+#include "../../include/oneOperatorsOperations.h"
 #include "../../include/registers.h"
 #include <stdio.h>
 
 void op_stop(void) {
     printf("STOP executing\n");
-    writeRegister(3, 0xFFFFFFFF); // IP = -1 para detener ejecucion
+    setRegister(3, 0xFFFFFFFF); // IP = -1 para detener ejecucion
 }
 
 void op_ret(){

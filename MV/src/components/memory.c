@@ -7,6 +7,7 @@
 #include <math.h>
 
 MainMemory memory;  // definicion global, celdas de 8 bits
+int flag;
 
 // Funcion para inicializar la memoria 
 void initMemory() {
@@ -56,24 +57,6 @@ void memoryAccess(uint32_t SegmentValue, uint32_t OffsetValue, uint32_t *logical
     
     uint32_t marValue = (aux << 16) | (*physicalAddress & 0xFFFF);
     setRegister(1, marValue);  //escribimos el MAR con cantidad y direccion fisica
-}
-
-void getMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress,  uint8_t *opCode, uint8_t size) {
-    
-    memoryAccess(csValue, IP, logicalAddress, physicalAddress, size);
-
-    readByte(*physicalAddress, opCode); // leo byte desde memoria
-    writeRegister(2, *opCode);  //escribimos el opCode en el MBR
-
-}
-
-void setMemoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress,  uint8_t value, uint8_t size) {
-
-    memoryAccess(csValue, IP, logicalAddress, physicalAddress, size);
-
-    writeRegister(2, value);
-    writeByte(*physicalAddress, value);
-
 }
 
 /*------------------- Funciones auxiliares -----------------*/
