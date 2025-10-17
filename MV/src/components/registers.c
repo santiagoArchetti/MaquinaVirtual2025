@@ -11,32 +11,34 @@ void initRegisters() { // inicializamos en 0 todos los registros
 }
 
 // Funcion para escribir un registro
-void setRegister(int8_t regIndex, uint32_t value) {
+void setRegister(int regIndex, uint32_t value) {
+    uint8_t reg = (uint8_t) regIndex;
     uint32_t aux = 0x0;
     if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
         printf("Error: Invalid register index: %d\n", regIndex);
         setRegister(3,0xFFFFFFFF);
     }
     else {
-        aux = registers.registerValue[regIndex & 0x1F];
-        switch ( (regIndex >> 6) & 0x3 ) {
+        aux = registers.registerValue[regIndex];
+        switch ( (reg >> 6) & 0x3 ) {
             case 1: value = (aux & 0xFFFFFFFFFFFF0000) | (value & 0xFFFF); break;
             case 2: value = (aux & 0xFFFFFFFF0000FFFF) | (value & 0xFFFF0000); break; // o aux = (aux & 0xFFFFFFFF0000FFFF) | (value << 8); break;
             case 3: value = (aux & 0xFFFFFFFF00000000)  | (value & 0xFFFFFFFF); break; 
         }  
-        registers.registerValue[regIndex & 0x1F] = value; // o [ binADecimal(regIndex & 0x1F) ]
+        registers.registerValue[regIndex] = value; // o [ binADecimal(regIndex & 0x1F) ]
     }
 }
 
 // Funcion para cargar el valor de un registro
-void getRegister(int8_t regIndex, uint32_t* value) {
+void getRegister(int regIndex, uint32_t* value) {
+    uint8_t reg = (uint8_t) regIndex;
     if (regIndex < 0 || regIndex >= REGISTERS_SIZE) {
         printf("Error: Invalid register index: %d\n", regIndex);
         setRegister(3,0xFFFFFFFF);
     }
     else{
-        *value = registers.registerValue[regIndex & 0x1F];
-        switch ( (regIndex >> 6) & 0x3 ) {
+        *value = registers.registerValue[regIndex];
+        switch ( (reg >> 6) & 0x3 ) {
             case 1: *value &= 0xFFFF; break;
             case 2: {
                 *value &= 0xFFFF0000; break;
@@ -58,7 +60,7 @@ int opCodeExists(uint8_t opCode){
 }
 
 int binADecimal(uint32_t op) {
-    op = op & 0x0000003F;   // Sacamos el tipo de operando (3F por los 32 registros)
+    op = op & 0x0000001F;   // Sacamos el tipo de operando (3F por los 32 registros)
     int sum = 0;
     for (int i = 0 ; i < 6 ; i++){
         if ( (op & 0x00000001) == 0x00000001 && sum < 32)
