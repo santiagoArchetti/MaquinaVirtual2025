@@ -55,9 +55,9 @@ void memoryAccess(uint32_t SegmentValue, uint32_t OffsetValue, uint32_t *logical
     setRegister(0, *logicalAddress);  //escribimos el LAR
     *physicalAddress = getFisicalAddress(*logicalAddress);
     
-    uint32_t marValue = (aux << 16) | (*physicalAddress & 0xFFFF);
-    // uint32_t marValue = 4 - aux;
-    // marValue = (marValue << 16) | (*physicalAddress & 0xFFFF);
+    // uint32_t marValue = (aux << 16) | (*physicalAddress & 0xFFFF);
+    uint32_t marValue = 4 - aux;
+    marValue = (marValue << 16) | (*physicalAddress & 0xFFFF);
     setRegister(1, marValue);  //escribimos el MAR con cantidad y direccion fisica
 }
 
@@ -81,8 +81,8 @@ void readMemory (uint32_t op) {
     
     uint32_t marValue;
     getRegister(1, &marValue);
-    int bytesToRead = 4 - ((marValue >> 16) & 0xFF);
-    // int bytesToRead = marValue >> 16;
+    // int bytesToRead = 4 - ((marValue >> 16) & 0xFF);
+    int bytesToRead = marValue >> 16;
 
     // Lectura de bytes de memoria (big-endian)
     if (isValidAddress(physicalAddress, bytesToRead, segmentRegister)) {
@@ -116,7 +116,8 @@ void writeMemory (uint32_t op) {
     uint32_t aux = ((op >> 22) & 0x3); // sirve para saber si es 'l', 'w' o 'b'
     memoryAccess(segmentRegister, offset, &logicalAddress, &physicalAddress, aux);
     getRegister(1, &mar);
-    int bytesToRead = 4 - ((mar >> 16) & 0xFF);
+    // int bytesToRead = 4 - ((mar >> 16) & 0xFF);
+    int bytesToRead = mar >> 16;
 
     // Escritura de bytes en memoria (big-endian)
     if (isValidAddress(physicalAddress, bytesToRead, segmentRegister)) {
