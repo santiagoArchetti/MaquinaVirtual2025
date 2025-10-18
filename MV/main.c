@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
+
 #include "include/operations.h"
 #include "include/memory.h"
 #include "include/registers.h"
@@ -25,11 +26,6 @@ void beginExecution(FILE *file, int debug) {
         printf("Error: File not valid (Header: %.5s, Version: 0x%02X)\n", header, version);
         return;
     }
-
-    initMemory();
-    initRegisters();
-    initSegmentTable();
-    initOpTable();
 
     uint8_t sizeHigh, sizeLow;
     fread(&sizeHigh, sizeof(uint8_t), 1, file);
@@ -219,7 +215,7 @@ void beginExecution(FILE *file, int debug) {
     
 
     getRegister(3, &IP);
-    if (debug && IP != 0xFFFFFFFF	) {
+    if (debug && IP != 0xFFFFFFFF) {
         printf("=========================================\n");
         printf("           END OF DISASSEMBLER          \n");
         printf("==========================================\n");
@@ -239,31 +235,112 @@ void beginExecution(FILE *file, int debug) {
 
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
+    if (argc == 1) {
         printf("==========================================\n");
         printf("              VMX25 EMULATOR MACHINE              \n");
         printf("==========================================\n");
-        printf("Usage: %s <file.vmx> [-d]\n", argv[0]);
-        printf("  -d: Debug mode (disassembler)\n");
+        printf("NOT ENOUGH PARAMS FOR A SECURE EXECUTION");
         return 1;
-    }
+    } else {
+        printf("==========================================\n");
+        printf("              VMX25 EMULATOR MACHINE              \n");
+        printf("==========================================\n");
     
-    FILE *file = fopen(argv[1], "rb");
-    if (!file) {
-        printf("Error: Cannot open file '%s'\n", argv[1]);
-        return 1;
-    }
-    
+    int i = 1;
+    FILE *fileA;
+    FILE *fileB;
+    int memorySize = 16384;
     int debug = 0;
-    if (argc > 2 && strcmp(argv[2], "-d") == 0) {
-        debug = 1;
+    int gotVmx = 0;
+    int gotParams = 0;
+    int len;
+
+    while ( i < argc) {
+        len = strlen(argv[i]);
+        if (i == 1  && (argv[i][len-1] == 'x')){
+            fileA= fopen(argv[i], "rb+");
+            if (!fileA) {
+            printf("Error: Cannot open file '%s'\n", argv[i]);
+            return 1;
+           }
+        }else if (((i = 1 || i == 2)  && (argv[i][len-1] == 'i'))){
+             fileB = fopen(argv[i], "rb+");
+              if (!fileB) {
+              printf("Error: Cannot open file '%s'\n", argv[i]);
+              return 1;
+             }
+        }else{ 
+             if (argv[i][0]="m"){
+                char *fin;
+                long numero = strtol(&argv[i][2], &fin, 10); //&argv[i][2] desde la posicion 2
+                if (*fin == '\0') {
+                    printf("Número válido: %ld\n", numero);
+                } else {
+                    printf("Error: Memory size containing non numeric values\n");
+                }
+               i += strlen(argv[i]) 
+             }else if (strcmp(argv[i], "-d") == 0)
+               debug = 1;
+               else if (strcmp(argv[i], "-P") == 0){
+                  if (gotVmx){
+                  gotParams = 1;
+                    int j = 0;
+                    offsetAcum = 0;
+                    char **lista = malloc(50 * sizeof(char*));  
+                    uint32_t *offsets = malloc(50 * sizeof(uint32_t));
+                    for (int k = 0; k < 50; k++) {
+                        lista[k] = malloc(100 * sizeof(char));
+                        if (lista[k] == NULL) {
+                            printf("Error al reservar string %d\n", k);
+                            return 1;
+                        }
+                        strcpy(lista[k], "");  // Inicializar vacío
+                    }
+                    while (i < argc) {
+                      strcpy(lista[j],argv[i]);
+                      offsets[j] = offsetAcum;
+                      offsetAcum += strlen(lista[j]); 
+                      j++;
+                      i++;
+                    } 
+                  }
+               }
+             }
+        i++;
+    }
+
+    initMemory(memorySize);
+    initRegisters();
+    initSegmentTable();
+    initOpTable();
+
+    if (gotParams){
+        i = 0;
+        uint32_t direccion_fisica = 0x0;
+        while (i < j){
+            for (k = 0; k <= strlen(list[i]); k++){
+                writeByte(direccion_fisica,list[i][k]);
+                direccion_fisica++;
+            }
+            i++;
+        }
+        i = 0;
+        while (i < j){
+            for (k = 0; k <= 4; k++){
+                writeByte(direccion_fisica,((offsets[k] >> (3 - k)) * 8));
+                direccion_fisica++;
+            }
+            i++;
+        }
     }
     
-    beginExecution(file, debug);
+    beginExecution(fileA,fileB,debug);
     
     // Liberar memoria de la memoria
-    fclose(file);
+    fclose(fileA);
+    fclose(fileB)
     return 0;
+  }
 }
 
 
