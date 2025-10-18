@@ -39,7 +39,6 @@ void setRegister(int regIndex, uint32_t value) {
     registers.registerValue[index] = value;
 }
 
-
 // Funcion para cargar el valor de un registro
 void getRegister(int regIndex, uint32_t* value) {
     uint8_t reg = (uint8_t) regIndex;
@@ -66,11 +65,9 @@ void getRegister(int regIndex, uint32_t* value) {
     }
 }
 
-
-
 int opCodeExists(uint8_t opCode){
     opCode = opCode & 0x1F;
-    if ( ( opCode >= 0x10 && opCode <= 0x1F ) || ( opCode >= 0x00 && opCode <= 0x08 ) || opCode == 0x0F)
+    if ( ( opCode >= 0x10 && opCode <= 0x1F ) || ( opCode >= 0x00 && opCode <= 0x08 ) || ( opCode >= 0x0B && opCode <= 0x0F ) )
         return 1;
     else{
         setRegister(3,0xFFFFFFFF);

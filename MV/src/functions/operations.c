@@ -12,13 +12,11 @@ void analizeInstruction(uint8_t instruction, uint8_t *op1Bytes, uint8_t *op2Byte
     uint8_t op1Type, op2Type;
     
     if ((instruction & 0x10) == 0x10) {             // Para saber si es de 2 operandos (0001 0000)
-
         op1Type = (instruction >> 4) & 0x03;    // bits 5-4 → tipo A
         op2Type = (instruction >> 6) & 0x03;    // bits 7-6 → tipo B
         *op1Bytes = op1Type;
         *op2Bytes = op2Type;
     } else if ((instruction & 0x0F) != 0x0F) {      // Caso: instruccion con 1 operando
- 
         op1Type = (instruction >> 6) & 0x03;    // bits 7-6 → tipo A
         *op1Bytes = op1Type;
         *op2Bytes = 0x0;
@@ -80,7 +78,7 @@ void initOpTable(void) {
     opTable1[0x0D] = op_call; // CALL
 
     // Operaciones sin operandos
-    opTable1[0x0E] = op_ret;  // RET
+    opTable0[0x0E] = op_ret;  // RET
     opTable0[0x0F] = op_stop; // STOP
 }
 

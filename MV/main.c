@@ -216,7 +216,6 @@ void beginExecution(FILE *file, int debug) {
         // Actualizar IP para la siguiente iteracion
         getRegister(3, &IP);
     }
-    
 
     getRegister(3, &IP);
     if (debug && IP != 0xFFFFFFFF	) {
