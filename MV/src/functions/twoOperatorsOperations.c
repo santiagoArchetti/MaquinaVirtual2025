@@ -532,10 +532,10 @@ void op_sar(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             
-            int32_t a_signed = (int32_t)mbrValue;   // interpretar con signo
-            uint32_t b = op2 & 0xFFFF;              // el inmediato, sin signo
+            int32_t a_signed = (int32_t)mbrValue;   // interpretar con semptySeg
+            uint32_t b = op2 & 0xFFFF;              // el inmediato, sin semptySeg
             
-            int32_t result = a_signed >> b;         // shift aritmético (mantiene signo)
+            int32_t result = a_signed >> b;         // shift aritmético (mantiene semptySeg)
             
             setRegister(2, (uint32_t)result);       // lo guardás de nuevo en el registro
             writeMemory(op1);

@@ -2,67 +2,21 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-
 #include "include/operations.h"
 #include "include/memory.h"
 #include "include/registers.h"
 #include "include/segmentTable.h"
 #include "include/directions.h"
 
-void beginExecution(FILE *file, FILE *filei, int debug) {
-    uint8_t opCode;
-    char header[5] = {0};
-    uint8_t version;
-    uint16_t codeSize;
-
-    if (fread(header, sizeof(uint8_t), 5, file) != 5 ||
-        fread(&version, sizeof(uint8_t), 1, file) != 1) {
-        printf("Error: No se pudo leer el header del archivo\n");
-        return;
-    }
-
-    if (strncmp(header, "VMX25", 5) != 0 || version != 0x01) {
-        printf("Error: File not valid (Header: %.5s, Version: 0x%02X)\n", header, version);
-        return;
-    }
-
-    uint8_t sizeHigh, sizeLow;
-    fread(&sizeHigh, sizeof(uint8_t), 1, file);
-    fread(&sizeLow, sizeof(uint8_t), 1, file);
-    codeSize = (sizeHigh << 8) | sizeLow;  // Big-endian
-    
-    printf("Size of the code: %u bytes\n", codeSize);
-    setSegmentDataLength(codeSize);
-    setSegmentDataLength(16384 - codeSize);
-
-    for (int i = 0; i < codeSize; i++) {
-        fread(&opCode, sizeof(uint8_t), 1, file);
-        writeByte(i, opCode);
-    }
-
-    setRegister(26, 0x00000000);
-    setRegister(27, 0x00010000);
-    setRegister(3, 0x00000000);
-
-    uint16_t baseCodeSegment, codeSegmentValueLength;
-    uint32_t csValue;
-    getRegister(26, &csValue);
-    getSegmentRange(csValue, &baseCodeSegment, &codeSegmentValueLength);
-    
-    if (debug) {
-        printf("==========================================\n");
-        printf("           DISASSEMBLER VMX25            \n");
-        printf("==========================================\n");
-        printf("Header: VMX25 | Version: %d | Size: %u bytes\n", version, codeSize);
-    } else {
-        printf("==========================================\n");
-        printf("          STARTING EXECUTION             \n");
-        printf("==========================================\n");
-    }
+void beginExecution(FILE *filei, int debug) {
 
     uint32_t IP;
     getRegister(3, &IP);
-    uint32_t logicalAddress, fisicalAddress;
+    uint32_t logicalAddress, fisicalAddress, csValue;
+    uint16_t baseCodeSegment, codeSegmentValueLength;
+    getRegister(26,&csValue);
+    getSegmentRange((csValue >> 16), &baseCodeSegment, &codeSegmentValueLength);
+    uint8_t opCode;
 
     while (IP < baseCodeSegment + codeSegmentValueLength && IP >= baseCodeSegment && IP != 0xFFFFFFFF) {
         logicalAddress = getLogicalAddress(csValue, IP);
@@ -78,8 +32,6 @@ void beginExecution(FILE *file, FILE *filei, int debug) {
             uint8_t op1Bytes, op2Bytes;
             analizeInstruction(opCode, &op1Bytes, &op2Bytes);
 
-
-            
             // Debug: mostrar informacion de la instruccion
             if (debug) {
                 printf("[%04X] %02X", IP, opCode);
@@ -125,8 +77,6 @@ void beginExecution(FILE *file, FILE *filei, int debug) {
                 setRegister(6, operandB);
               }  
 
-              
-                
               if (op1Bytes > 0) {
                 uint8_t bytes1[3] = {0};
                 int ii = 0;
@@ -229,6 +179,113 @@ void beginExecution(FILE *file, FILE *filei, int debug) {
             printf("==========================================\n");
         }
     }
+}
+
+void analizeHeader(FILE *file, int debug,int gotParams) {
+    uint8_t opCode;
+    char header[5] = {0};
+    uint8_t version;
+    uint16_t codeSize;
+
+    if (fread(header, sizeof(uint8_t), 5, file) != 5 || fread(&version, sizeof(uint8_t), 1, file) != 1) {
+        printf("Error: No se pudo leer el header del archivo\n");
+        return;
+    }
+
+    if ( strncmp(header, "VMX25", 5) != 0 || (version != 0x01 && version != 0x02) ) {
+        printf("Error: File not valid (Header: %.5s, Version: 0x%02X)\n", header, version);
+        return;
+    }
+
+    if (version == 0x01) {
+        uint8_t sizeHigh, sizeLow;
+        fread(&sizeHigh, sizeof(uint8_t), 1, file);
+        fread(&sizeLow, sizeof(uint8_t), 1, file);
+        codeSize = (sizeHigh << 8) | sizeLow;  // Big-endian
+        
+        printf("Size of the code: %u bytes\n", codeSize);
+        setSegmentDataLength(codeSize);
+        setSegmentDataLength(16384 - codeSize);
+
+        for (int i = 0; i < codeSize; i++) {
+            fread(&opCode, sizeof(uint8_t), 1, file);
+            writeByte(i, opCode);
+        }
+
+        setRegister(26, 0x00000000);
+        setRegister(27, 0x00010000);
+        setRegister(3, 0x00000000);
+
+        uint16_t baseCodeSegment, codeSegmentValueLength;
+        uint32_t csValue;
+        getRegister(26, &csValue);
+        getSegmentRange(csValue, &baseCodeSegment, &codeSegmentValueLength);
+        
+    } else {
+        uint8_t sizeHigh, sizeLow;
+        uint32_t registerValue;
+        uint32_t vec[5];
+
+        for (int ii = 0; ii < 6; ii++) { 
+            fread(&sizeHigh, sizeof(uint8_t), 1, file);
+            fread(&sizeLow, sizeof(uint8_t), 1, file);
+            if ( ii < 5)
+                vec[ii + 1 - gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
+            else
+                vec[0 + gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
+        }
+        int emptySeg = 0;
+        for (int ii = 0; ii < 5; ii++){
+            if (vec[ii] != 0) {
+                setSegmentDataLength(vec[ii]);
+                registerValue = (uint32_t) (( ((uint32_t) ii - emptySeg) << 16 ) | (0x0));
+            }else{
+                registerValue = 0xFFFFFFFF;
+                emptySeg++;            
+            }
+            switch (ii) {
+                case 1:setRegister(30,registerValue);
+                        break; 
+                case 2:setRegister(26,registerValue);
+                        break;
+                case 3:setRegister(27,registerValue);
+                        break;
+                case 4:setRegister(28,registerValue);
+                        break;
+                case 5:setRegister(29,registerValue);
+                        break;
+            }
+        }
+       
+        uint32_t direccion_logica;
+        getRegister(26,&direccion_logica);
+        uint16_t base, tam;
+        getSegmentRange((direccion_logica >> 16), &base, &tam);
+        for (int i = 0; i < tam; i++) {
+            fread(&opCode, sizeof(uint8_t), 1, file);
+            writeByte(base + i, opCode);
+        }
+        uint32_t KS;
+        getRegister(30,&KS);
+        if (KS != -1){
+            getSegmentRange((KS >> 16), &base, &tam);
+            for (int i = 0; i < tam; i++) {
+                fread(&opCode, sizeof(uint8_t), 1, file);
+                writeByte(base + i, opCode);
+            }
+        }
+    }
+    if (debug) {
+            printf("==========================================\n");
+            printf("           DISASSEMBLER VMX25            \n");
+            printf("==========================================\n");
+            printf("Header: VMX25 | Version: %d | Size: %u bytes\n", version, codeSize);
+        } else {
+            printf("==========================================\n");
+            printf("          STARTING EXECUTION             \n");
+            printf("==========================================\n");
+        }
+    beginExecution(file, debug);
 }
 
 int main(int argc, char* argv[]) {
@@ -356,8 +413,7 @@ int main(int argc, char* argv[]) {
     initSegmentTable();
     initOpTable();
 
-    // Si hay parámetros, escribirlos en memoria
-    if (gotParams && lista != NULL && offsets != NULL) {
+       if (gotParams && lista != NULL && offsets != NULL) {
         uint32_t direccion_fisica = 0x0;
         
         // Escribir los strings en memoria
@@ -367,7 +423,9 @@ int main(int argc, char* argv[]) {
                 direccion_fisica++;
             }
         }
-        
+
+        setRegister(31,direccion_fisica);
+
         // Escribir los offsets en memoria
         for (int idx = 0; idx < j; idx++) {
             for (int k = 0; k < 4; k++) {
@@ -381,13 +439,17 @@ int main(int argc, char* argv[]) {
         for (int k = 0; k < j; k++) {
             free(lista[k]);
         }
+
+        setSegmentDataLength(direccion_fisica);
         free(lista);
         free(offsets);
+    }else{
+        setRegister(31,0xFFFFFFFF);
     }
-    
-    // Ejecutar el programa
-    beginExecution(fileA, fileB, debug);
-    
+
+    if (fileA != NULL) {
+        analizeHeader(fileA, debug, gotParams);
+    }
     // Liberar recursos
     if (fileA) {
         fclose(fileA);
