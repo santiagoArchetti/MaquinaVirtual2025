@@ -333,13 +333,6 @@ void op_not(uint32_t op1) {
 }
 
 void op_push(uint32_t op1){
-    /*
-    decrementar SP en 4 (jijiji)
-    si el valor de SP < valor SS --> stack overflow (aborta ejecucion)
-    obtener el valor del operando
-    transformar valor obtenido a 4 bytes
-    almacenrar en big endian.
-    */
 
     uint32_t SP;
     uint32_t SS;

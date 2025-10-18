@@ -212,7 +212,6 @@ void beginExecution(FILE *file, int debug) {
         // Actualizar IP para la siguiente iteracion
         getRegister(3, &IP);
     }
-    
 
     getRegister(3, &IP);
     if (debug && IP != 0xFFFFFFFF) {
@@ -232,7 +231,6 @@ void beginExecution(FILE *file, int debug) {
         }
     }
 }
-
 
 int main(int argc, char* argv[]) {
     if (argc == 1) {

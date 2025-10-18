@@ -18,7 +18,7 @@ extern int flag;
 void initMemory(int memorySize);
 int writeByte(int address, uint8_t value);
 int readByte(int address, uint8_t* value);
-void memoryAccess(uint32_t csValue, uint32_t IP, uint32_t *logicalAddress, uint32_t *physicalAddress, uint32_t aux);
+void memoryAccess(uint32_t SegmentValue, uint32_t OffsetValue, uint32_t *logicalAddress, uint32_t *physicalAddress, uint32_t aux);
 void readMemory (uint32_t op);
 void writeMemory (uint32_t op);
 int binADecimal(uint32_t op);

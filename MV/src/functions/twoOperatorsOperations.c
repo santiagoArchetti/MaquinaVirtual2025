@@ -73,7 +73,7 @@ void op_add(uint32_t op1, uint32_t op2) {
         uint32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
-        if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
+        if ( sizeOp1 == 1 && sizeOp2 == 1 ){            // De registro a registro
             getRegister(reg1, &a);
             getRegister(reg2, &b);
             setRegister(reg1, a + b);
