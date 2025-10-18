@@ -3,6 +3,7 @@
 #include "../../include/directions.h"
 #include "../../include/segmentTable.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <math.h>
@@ -10,13 +11,40 @@
 MainMemory memory;  // definicion global, celdas de 8 bits
 int flag;
 
-// Funcion para inicializar la memoria 
-void initMemory() {
+// Funcion para inicializar la memoria con tamaño dinámico
+void initMemory(int memorySize) {
+    // Si ya está inicializada, liberar primero
+    if (memory.initialized && memory.data != NULL) {
+        free(memory.data);
+    }
+    
+    // Asignar memoria dinámicamente
+    memory.data = (uint8_t*)malloc(memorySize * sizeof(uint8_t));
+    
+    if (memory.data == NULL) {
+        printf("Error: Could not allocate memory of size %d bytes\n", memorySize);
+        memory.initialized = 0;
+        memory.size = 0;
+        return;
+    }
+    
     // Inicializar toda la memoria con ceros
-    memset(memory.data, 0, MEMORY_SIZE);
+    memset(memory.data, 0, memorySize);
+    memory.size = memorySize;
     memory.initialized = 1;
-    printf("Main memory initialized: %d bytes (16 KiB)\n", MEMORY_SIZE);
-    printf("Available addresses: 0 to %d\n", MAX_ADDRESS);
+    
+    printf("Main memory initialized: %d bytes (%.2f KiB)\n", memorySize, memorySize / 1024.0);
+    printf("Available addresses: 0 to %d\n", memorySize - 1);
+}
+
+// Funcion para liberar la memoria
+void freeMemory() {
+    if (memory.initialized && memory.data != NULL) {
+        free(memory.data);
+        memory.data = NULL;
+        memory.size = 0;
+        memory.initialized = 0;
+    }
 }
 
 // Funcion para escribir un byte en la memoria
@@ -26,8 +54,8 @@ int writeByte(int address, uint8_t value) {
         return 0;
     }
     
-    if (address < 0 || address > MAX_ADDRESS) {
-        printf("Error: Address %d out of range (0-%d)\n", address, MAX_ADDRESS);
+    if (address < 0 || address >= memory.size) {
+        printf("Error: Address %d out of range (0-%d)\n", address, memory.size - 1);
         return 0;
     }
     memory.data[address] = value;
@@ -41,8 +69,8 @@ int readByte(int address, uint8_t* value) {
         return 0;
     }
     
-    if (address < 0 || address > MAX_ADDRESS) {
-        printf("Error: Address %d out of range (0-%d)\n", address, MAX_ADDRESS);
+    if (address < 0 || address >= memory.size) {
+        printf("Error: Address %d out of range (0-%d)\n", address, memory.size - 1);
         return 0;
     }    
     *value = memory.data[address];

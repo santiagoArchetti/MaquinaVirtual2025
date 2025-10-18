@@ -375,7 +375,7 @@ void op_pop(uint32_t op1){
     getRegister(7,&SP);
     getRegister(29,&SS);
 
-    if ((SP + 4) > MEMORY_SIZE){
+    if ((SP + 4) > memory.size){
         printf("ERROR: STACK UNDERFLOW");
         setRegister(3,0xFFFFFFFF);
     }
