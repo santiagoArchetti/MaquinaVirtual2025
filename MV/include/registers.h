@@ -11,9 +11,9 @@ typedef struct {
 
 extern Registers registers;
 
+void initRegisters();  // funcion extra para inicializar
 void setRegister(int regIndex, uint32_t value);
 void getRegister(int regIndex, uint32_t* value);
-void initRegisters();  // funcion extra para inicializar
 int opCodeExists(uint8_t opCode);
 int binADecimal(uint32_t op);
 void setCondicion(uint32_t value);
