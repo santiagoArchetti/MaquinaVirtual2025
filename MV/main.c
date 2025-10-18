@@ -181,7 +181,7 @@ void beginExecution(FILE *filei, int debug) {
     }
 }
 
-void analizeHeader(FILE *file, int debug,int gotParams) {
+void analizeHeader(FILE *file, int debug,int gotParams, , uint32_t offsetPosition, int argc) {
     uint8_t opCode;
     char header[5] = {0};
     uint8_t version;
@@ -221,60 +221,69 @@ void analizeHeader(FILE *file, int debug,int gotParams) {
         getRegister(26, &csValue);
         getSegmentRange(csValue, &baseCodeSegment, &codeSegmentValueLength);
         
-    } else {
-        uint8_t sizeHigh, sizeLow;
-        uint32_t registerValue;
-        uint32_t vec[5];
+    } else
+        if (version == 0x02) {
+            uint8_t sizeHigh, sizeLow;
+            uint32_t registerValue;
+            uint32_t vec[5];
 
-        for (int ii = 0; ii < 6; ii++) { 
+            for (int ii = 0; ii < 6; ii++) { 
+                fread(&sizeHigh, sizeof(uint8_t), 1, file);
+                fread(&sizeLow, sizeof(uint8_t), 1, file);
+                if ( ii < 5)
+                    vec[ii + 1 - gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
+                else
+                    vec[0 + gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
+            }
+            int emptySeg = 0;
+            for (int ii = 0; ii < 5; ii++){
+                if (vec[ii] != 0) {
+                    setSegmentDataLength(vec[ii]);
+                    registerValue = (uint32_t) (( ((uint32_t) ii - emptySeg) << 16 ) | (0x0));
+                }else{
+                    registerValue = 0xFFFFFFFF;
+                    emptySeg++;            
+                }
+                switch (ii) {
+                    case 1:setRegister(30,registerValue);
+                            break; 
+                    case 2:setRegister(26,registerValue);
+                            break;
+                    case 3:setRegister(27,registerValue);
+                            break;
+                    case 4:setRegister(28,registerValue);
+                            break;
+                    case 5:setRegister(29,registerValue);
+                            break;
+                }
+            }
+            uint32_t entryPoint;
             fread(&sizeHigh, sizeof(uint8_t), 1, file);
             fread(&sizeLow, sizeof(uint8_t), 1, file);
-            if ( ii < 5)
-                vec[ii + 1 - gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
-            else
-                vec[0 + gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
-        }
-        int emptySeg = 0;
-        for (int ii = 0; ii < 5; ii++){
-            if (vec[ii] != 0) {
-                setSegmentDataLength(vec[ii]);
-                registerValue = (uint32_t) (( ((uint32_t) ii - emptySeg) << 16 ) | (0x0));
-            }else{
-                registerValue = 0xFFFFFFFF;
-                emptySeg++;            
-            }
-            switch (ii) {
-                case 1:setRegister(30,registerValue);
-                        break; 
-                case 2:setRegister(26,registerValue);
-                        break;
-                case 3:setRegister(27,registerValue);
-                        break;
-                case 4:setRegister(28,registerValue);
-                        break;
-                case 5:setRegister(29,registerValue);
-                        break;
-            }
-        }
-       
-        uint32_t direccion_logica;
-        getRegister(26,&direccion_logica);
-        uint16_t base, tam;
-        getSegmentRange((direccion_logica >> 16), &base, &tam);
-        for (int i = 0; i < tam; i++) {
-            fread(&opCode, sizeof(uint8_t), 1, file);
-            writeByte(base + i, opCode);
-        }
-        uint32_t KS;
-        getRegister(30,&KS);
-        if (KS != -1){
-            getSegmentRange((KS >> 16), &base, &tam);
+            entryPoint = (sizeHigh << 8) | sizeLow;  // Big-endian
+
+            uint32_t direccion_logica;
+            getRegister(26,&direccion_logica);
+            setRegister(3, (direccion_logica & 0xFFFFFFFF00000000 | entryPoint));
+            uint16_t base, tam;
+            getSegmentRange((direccion_logica >> 16), &base, &tam);
             for (int i = 0; i < tam; i++) {
                 fread(&opCode, sizeof(uint8_t), 1, file);
                 writeByte(base + i, opCode);
             }
+            uint32_t KS;
+            getRegister(30,&KS);
+            if (KS != -1){
+                getSegmentRange((KS >> 16), &base, &tam);
+                for (int i = 0; i < tam; i++) {
+                    fread(&opCode, sizeof(uint8_t), 1, file);
+                    writeByte(base + i, opCode);
+                }
+            }
+            opTable1[0x0B](offsetPosition);
+            opTable1[0x0B](argc);
+            opTable1[0x0B](0XFFFFFFFF);
         }
-    }
     if (debug) {
             printf("==========================================\n");
             printf("           DISASSEMBLER VMX25            \n");
@@ -319,7 +328,7 @@ int main(int argc, char* argv[]) {
     char **lista = NULL;
     uint32_t *offsets = NULL;
     int j = 0;
-    uint32_t offsetAcum = 0;
+    uint32_t offsetAcum = 0, offsetPostion =0xFFFFFFFF;
 
     // Parseo de argumentos
     while (i < argc) {
@@ -408,6 +417,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Inicializar componentes con tamaño de memoria dinámico
+    setRegister(7,memorySize);
     initMemory(memorySize);
     initRegisters();
     initSegmentTable();
@@ -415,7 +425,7 @@ int main(int argc, char* argv[]) {
 
        if (gotParams && lista != NULL && offsets != NULL) {
         uint32_t direccion_fisica = 0x0;
-        
+               
         // Escribir los strings en memoria
         for (int idx = 0; idx < j; idx++) {
             for (int k = 0; k <= strlen(lista[idx]); k++) { // Incluye null terminator
@@ -423,8 +433,8 @@ int main(int argc, char* argv[]) {
                 direccion_fisica++;
             }
         }
-
-        setRegister(31,direccion_fisica);
+        offsetsPosition = direccion_fisica;         
+        setRegister(31,0x00000000);
 
         // Escribir los offsets en memoria
         for (int idx = 0; idx < j; idx++) {
@@ -448,7 +458,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (fileA != NULL) {
-        analizeHeader(fileA, debug, gotParams);
+        analizeHeader(fileA, debug, gotParams,offsetPostion, j);
     }
     // Liberar recursos
     if (fileA) {
