@@ -8,7 +8,36 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-void op_sys(uint32_t op1) {
+void setImage(FILE *arch){
+    
+    // Creacion de cabecera
+    char header[5] = "VMX25";
+    uint8_t version = 0x1;
+    fwrite(&header, sizeof(uint8_t), 5, arch);
+    fwrite(&version, sizeof(uint8_t), 1, arch);
+    fwrite(&(memory.size), sizeof(uint16_t), 1, arch);
+
+    // Datos de memoria, registros y segmentos
+    int p;
+    uint32_t aux;
+    uint8_t mem;
+    // Setteo de registros
+    for (p = 0; p < 32; p++){
+        getRegister(p,&aux);
+        fwrite(&aux, sizeof(uint32_t), 1, arch);
+    }
+    // Setteo de tabla
+    for (p = 0; p < 8; p++){
+        fwrite(&segmentTable.segment[p], sizeof(uint32_t), 1, arch);
+    }
+    // Setteo de memoria
+    for (p = 0; p < memory.size; p++) {
+        readByte(p,&mem);
+        fwrite(&mem, sizeof(uint8_t), 1, arch);
+    }
+}
+
+void op_sys(uint32_t op1, FILE *arch) {
     
     int operacionCode = op1 & 0x0000001F;
     switch (operacionCode) {
@@ -17,7 +46,7 @@ void op_sys(uint32_t op1) {
         case 0x03: sys_string_read(); break;
         case 0x04: sys_string_write(); break;
         case 0x07: sys_clear_screen(); break;
-        case 0x1F: sys_breakpoint(); break;
+        case 0x1F: sys_breakpoint(arch); break;
         default: {
             printf("Error: SYS code invalid: %u\n", op1);
             setRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
@@ -240,7 +269,7 @@ void sys_clear_screen(){
     system("clear");
 }
 
-void sys_breakpoint(){
+void sys_breakpoint(FILE *arch){
     char stop;
     scanf("%c", &stop);
     switch (stop) {
@@ -252,7 +281,11 @@ void sys_breakpoint(){
             setRegister(3,0xFFFFFFFF);
         }
     }
+    if (arch == NULL)
+        arch = fopen("imagen.vmi", "wb");
+    setImage(arch);
 }
+
 /* --------------------- JUMPS ------------------------ */
 void op_jmp(uint32_t op1) {
     setRegister(3, op1 & 0x00FFFFFF); // Actualizar IP

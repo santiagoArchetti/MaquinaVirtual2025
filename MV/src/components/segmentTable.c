@@ -41,6 +41,16 @@ void setSegmentDataLength(uint16_t dataLength) {
     segmentTable.position++;  // Avanzar a la siguiente entrada
 }
 
+// ver si lo sacamos (capaz q podemos solo adaptar setSegmentDataLength)
+void setSegmentTable(uint32_t dataLength) {
+    if (segmentTable.position >= SEGMENT_TABLE_SIZE) {
+        printf("Error: segment table full\n");
+        return;
+    }
+    segmentTable.segment[segmentTable.position] = dataLength;
+    segmentTable.position++;  // Avanzar a la siguiente entrada
+}
+
 // Consultar rango de un segmento
 void getSegmentRange(int segment, uint16_t* valueBase, uint16_t* valueLength) {
     uint32_t entry = segmentTable.segment[segment];

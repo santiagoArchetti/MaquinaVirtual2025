@@ -46,106 +46,110 @@ void beginExecution(FILE *filei, int debug) {
             
             if (opCodeExists(opCode)){
 
-              uint32_t operandA = 0, operandB = 0;
+                uint32_t operandA = 0, operandB = 0;
 
-              if (op2Bytes > 0) {
-                uint8_t bytes2[3] = {0};
-                int i = 0;
+                if (op2Bytes > 0) {
+                    uint8_t bytes2[3] = {0};
+                    int i = 0;
 
-                uint8_t TOPE_IP = IP + op2Bytes;
-                while (IP < TOPE_IP) {
-                  logicalAddress = getLogicalAddress(csValue, IP);
-                  fisicalAddress = getFisicalAddress(logicalAddress);
-                  readByte(fisicalAddress, &Value); //trae el dato del mbr
-                  opCode = (uint8_t)(Value & 0xFF);
-                  bytes2[i] = opCode;
-                  if (debug) {
-                      printf(" %02X", opCode);
-                  }
-                  i++;
-                  IP += 1;
+                    uint8_t TOPE_IP = IP + op2Bytes;
+                    while (IP < TOPE_IP) {
+                    logicalAddress = getLogicalAddress(csValue, IP);
+                    fisicalAddress = getFisicalAddress(logicalAddress);
+                    readByte(fisicalAddress, &Value); //trae el dato del mbr
+                    opCode = (uint8_t)(Value & 0xFF);
+                    bytes2[i] = opCode;
+                    if (debug) {
+                        printf(" %02X", opCode);
+                    }
+                    i++;
+                    IP += 1;
+                    }
+
+                    if (op2Bytes == 1) {
+                    operandB = bytes2[0];
+                    } else if (op2Bytes == 2) {
+                    operandB = ( (uint16_t) (bytes2[0] << 8) ) | bytes2[1];
+                    } else if (op2Bytes == 3) {
+                    operandB = ( (uint32_t) (bytes2[0] << 16) ) | ( (uint16_t) (bytes2[1] << 8) )| bytes2[2];
+                    }
+                    operandB = ( (uint32_t) op2Bytes << 24 ) | operandB;   // Asignacion del codigo de operado
+                    setRegister(6, operandB);
+                }  
+
+                if (op1Bytes > 0) {
+                    uint8_t bytes1[3] = {0};
+                    int ii = 0;
+                    uint8_t TOPE_IP1 = IP + op1Bytes;
+
+                    while (IP < TOPE_IP1) {
+                    logicalAddress = getLogicalAddress(csValue, IP);
+                    fisicalAddress = getFisicalAddress(logicalAddress);
+                    readByte(fisicalAddress, &Value); //trae el dato del mbr
+                    opCode = (uint8_t)(Value & 0xFF);
+                    bytes1[ii] = opCode;
+                    if (debug) {
+                        printf(" %02X", opCode);
+                    }
+                    ii++;
+                    IP = IP + 1;
+                    }
+                    
+                    if (op1Bytes == 1) {
+                    operandA = bytes1[0];
+                    } else if (op1Bytes == 2) {
+                    operandA = ( (uint16_t) (bytes1[0] << 8) ) | bytes1[1];
+                    } else if (op1Bytes == 3) {
+                    operandA = ( (uint32_t) (bytes1[0] << 16) ) | ( (uint16_t) (bytes1[1] << 8) ) | bytes1[2];
+                    }
+                    operandA = ( (uint32_t) op1Bytes << 24 ) | operandA;   // Asignacion del codigo de operado
+                    setRegister(5, operandA);
                 }
-
-                if (op2Bytes == 1) {
-                  operandB = bytes2[0];
-                } else if (op2Bytes == 2) {
-                  operandB = ( (uint16_t) (bytes2[0] << 8) ) | bytes2[1];
-                } else if (op2Bytes == 3) {
-                  operandB = ( (uint32_t) (bytes2[0] << 16) ) | ( (uint16_t) (bytes2[1] << 8) )| bytes2[2];
-                }
-                operandB = ( (uint32_t) op2Bytes << 24 ) | operandB;   // Asignacion del codigo de operado
-                setRegister(6, operandB);
-              }  
-
-              if (op1Bytes > 0) {
-                uint8_t bytes1[3] = {0};
-                int ii = 0;
-                uint8_t TOPE_IP1 = IP + op1Bytes;
-
-                while (IP < TOPE_IP1) {
-                  logicalAddress = getLogicalAddress(csValue, IP);
-                  fisicalAddress = getFisicalAddress(logicalAddress);
-                  readByte(fisicalAddress, &Value); //trae el dato del mbr
-                  opCode = (uint8_t)(Value & 0xFF);
-                  bytes1[ii] = opCode;
-                  if (debug) {
-                      printf(" %02X", opCode);
-                  }
-                  ii++;
-                  IP = IP + 1;
-                }
-                
-                if (op1Bytes == 1) {
-                  operandA = bytes1[0];
-                } else if (op1Bytes == 2) {
-                  operandA = ( (uint16_t) (bytes1[0] << 8) ) | bytes1[1];
-                } else if (op1Bytes == 3) {
-                  operandA = ( (uint32_t) (bytes1[0] << 16) ) | ( (uint16_t) (bytes1[1] << 8) ) | bytes1[2];
-                }
-                operandA = ( (uint32_t) op1Bytes << 24 ) | operandA;   // Asignacion del codigo de operado
-                setRegister(5, operandA);
-              }
               
-              // Debug: mostrar mnemonico y ejecutar operacion 
-              if (debug) {
-                  // Calcular el numero total de bytes mostrados
-                  int totalBytesShown = 1 + op1Bytes + op2Bytes; // opcode + operandos
-                  
-                  // Calcular padding para alinear mnemonicos (maximo 8 bytes = 24 chars)
-                  int paddingNeeded = 25 - (totalBytesShown * 3); // 3 chars por byte
-                  if (paddingNeeded < 0) paddingNeeded = 0;
-                  
-                  // Agregar padding
-                  for (int p = 0; p < paddingNeeded; p++) {
-                      printf(" ");
-                  }
-                  
-                  // Mostrar mnemonico
-                  const char* mnemonic = getInstructionMnemonic(cleanOpCode, op1Bytes, op2Bytes);
-                  printf("| %-4s", mnemonic);
+                // Debug: mostrar mnemonico y ejecutar operacion 
+                if (debug) {
+                    // Calcular el numero total de bytes mostrados
+                    int totalBytesShown = 1 + op1Bytes + op2Bytes; // opcode + operandos
+                    
+                    // Calcular padding para alinear mnemonicos (maximo 8 bytes = 24 chars)
+                    int paddingNeeded = 25 - (totalBytesShown * 3); // 3 chars por byte
+                    if (paddingNeeded < 0) paddingNeeded = 0;
+                    
+                    // Agregar padding
+                    for (int p = 0; p < paddingNeeded; p++) {
+                        printf(" ");
+                    }
+                    
+                    // Mostrar mnemonico
+                    const char* mnemonic = getInstructionMnemonic(cleanOpCode, op1Bytes, op2Bytes);
+                    printf("| %-4s", mnemonic);
 
-                   if (op1Bytes > 0 && op2Bytes > 0) {
-                       printf(" ");
-                       getOperandName(operandA);
-                       printf(", ");
-                       getOperandName(operandB);
-                   } else if (op1Bytes > 0) {
-                       printf(" ");
-                       getOperandName(operandA);
-                   }
-                  printf("\n");
-                  fflush(stdout);
-              }
+                    if (op1Bytes > 0 && op2Bytes > 0) {
+                        printf(" ");
+                        getOperandName(operandA);
+                        printf(", ");
+                        getOperandName(operandB);
+                    } else if (op1Bytes > 0) {
+                        printf(" ");
+                        getOperandName(operandA);
+                    }
+                    printf("\n");
+                    fflush(stdout);
+                }
 
                 if (op1Bytes > 0 && op2Bytes > 0) {
                     opTable2[cleanOpCode](operandA, operandB);
                 } else if (op1Bytes > 0 && op2Bytes == 0) {
-                    opTable1[cleanOpCode](operandA);
+                    if (cleanOpCode == 0x00)
+                        op_sys(operandA, filei);
+                    else
+                        opTable1[cleanOpCode](operandA);
                 } else{
                   opTable0[cleanOpCode]();
                 }
                 if (flag){
-                    opTable1[0x00](0xFF);
+                    //opTable1[0x00](0xFF);
+                    sys_breakpoint(filei);
                 }
             } else{
               setRegister(3,0xFFFFFFFF);
@@ -181,13 +185,14 @@ void beginExecution(FILE *filei, int debug) {
     }
 }
 
-void analizeHeader(FILE *file, int debug,int gotParams, , uint32_t offsetPosition, int argc) {
+void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t offsetPosition, int argc) {
     uint8_t opCode;
     char header[5] = {0};
     uint8_t version;
     uint16_t codeSize;
 
-    if (fread(header, sizeof(uint8_t), 5, file) != 5 || fread(&version, sizeof(uint8_t), 1, file) != 1) {
+    if ((fread(header, sizeof(uint8_t), 5, fileA) != 5 || fread(&version, sizeof(uint8_t), 1, fileA) != 1) &&
+        (fread(header, sizeof(uint8_t), 5, fileB) != 5 || fread(&version, sizeof(uint8_t), 1, fileB) != 1)) {
         printf("Error: No se pudo leer el header del archivo\n");
         return;
     }
@@ -196,94 +201,118 @@ void analizeHeader(FILE *file, int debug,int gotParams, , uint32_t offsetPositio
         printf("Error: File not valid (Header: %.5s, Version: 0x%02X)\n", header, version);
         return;
     }
-
-    if (version == 0x01) {
-        uint8_t sizeHigh, sizeLow;
-        fread(&sizeHigh, sizeof(uint8_t), 1, file);
-        fread(&sizeLow, sizeof(uint8_t), 1, file);
-        codeSize = (sizeHigh << 8) | sizeLow;  // Big-endian
-        
-        printf("Size of the code: %u bytes\n", codeSize);
-        setSegmentDataLength(codeSize);
-        setSegmentDataLength(16384 - codeSize);
-
-        for (int i = 0; i < codeSize; i++) {
-            fread(&opCode, sizeof(uint8_t), 1, file);
-            writeByte(i, opCode);
-        }
-
-        setRegister(26, 0x00000000);
-        setRegister(27, 0x00010000);
-        setRegister(3, 0x00000000);
-
-        uint16_t baseCodeSegment, codeSegmentValueLength;
-        uint32_t csValue;
-        getRegister(26, &csValue);
-        getSegmentRange(csValue, &baseCodeSegment, &codeSegmentValueLength);
-        
-    } else
-        if (version == 0x02) {
+    if (fileA != NULL){
+        if (version == 0x01) {
             uint8_t sizeHigh, sizeLow;
-            uint32_t registerValue;
-            uint32_t vec[5];
+            fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
+            fread(&sizeLow, sizeof(uint8_t), 1, fileA);
+            codeSize = (sizeHigh << 8) | sizeLow;  // Big-endian
+            
+            printf("Size of the code: %u bytes\n", codeSize);
+            setSegmentDataLength(codeSize);
+            setSegmentDataLength(16384 - codeSize);
 
-            for (int ii = 0; ii < 6; ii++) { 
-                fread(&sizeHigh, sizeof(uint8_t), 1, file);
-                fread(&sizeLow, sizeof(uint8_t), 1, file);
-                if ( ii < 5)
-                    vec[ii + 1 - gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
-                else
-                    vec[0 + gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
+            for (int i = 0; i < codeSize; i++) {
+                fread(&opCode, sizeof(uint8_t), 1, fileA);
+                writeByte(i, opCode);
             }
-            int emptySeg = 0;
-            for (int ii = 0; ii < 5; ii++){
-                if (vec[ii] != 0) {
-                    setSegmentDataLength(vec[ii]);
-                    registerValue = (uint32_t) (( ((uint32_t) ii - emptySeg) << 16 ) | (0x0));
-                }else{
-                    registerValue = 0xFFFFFFFF;
-                    emptySeg++;            
-                }
-                switch (ii) {
-                    case 1:setRegister(30,registerValue);
-                            break; 
-                    case 2:setRegister(26,registerValue);
-                            break;
-                    case 3:setRegister(27,registerValue);
-                            break;
-                    case 4:setRegister(28,registerValue);
-                            break;
-                    case 5:setRegister(29,registerValue);
-                            break;
-                }
-            }
-            uint32_t entryPoint;
-            fread(&sizeHigh, sizeof(uint8_t), 1, file);
-            fread(&sizeLow, sizeof(uint8_t), 1, file);
-            entryPoint = (sizeHigh << 8) | sizeLow;  // Big-endian
 
-            uint32_t direccion_logica;
-            getRegister(26,&direccion_logica);
-            setRegister(3, (direccion_logica & 0xFFFFFFFF00000000 | entryPoint));
-            uint16_t base, tam;
-            getSegmentRange((direccion_logica >> 16), &base, &tam);
-            for (int i = 0; i < tam; i++) {
-                fread(&opCode, sizeof(uint8_t), 1, file);
-                writeByte(base + i, opCode);
-            }
-            uint32_t KS;
-            getRegister(30,&KS);
-            if (KS != -1){
-                getSegmentRange((KS >> 16), &base, &tam);
+            setRegister(26, 0x00000000);
+            setRegister(27, 0x00010000);
+            setRegister(3, 0x00000000);
+
+            uint16_t baseCodeSegment, codeSegmentValueLength;
+            uint32_t csValue;
+            getRegister(26, &csValue);
+            getSegmentRange(csValue, &baseCodeSegment, &codeSegmentValueLength);
+            
+        } else
+            if (version == 0x02) {
+                uint8_t sizeHigh, sizeLow;
+                uint32_t registerValue;
+                uint32_t vec[5];
+
+                for (int ii = 0; ii < 6; ii++) { 
+                    fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
+                    fread(&sizeLow, sizeof(uint8_t), 1, fileA);
+                    if ( ii < 5)
+                        vec[ii + 1 - gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
+                    else
+                        vec[0 + gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
+                }
+                int emptySeg = 0;
+                for (int ii = 0; ii < 5; ii++){
+                    if (vec[ii] != 0) {
+                        setSegmentDataLength(vec[ii]);
+                        registerValue = (uint32_t) (( ((uint32_t) ii - emptySeg) << 16 ) | (0x0));
+                    }else{
+                        registerValue = 0xFFFFFFFF;
+                        emptySeg++;            
+                    }
+                    switch (ii) {
+                        case 1:setRegister(30,registerValue);
+                                break; 
+                        case 2:setRegister(26,registerValue);
+                                break;
+                        case 3:setRegister(27,registerValue);
+                                break;
+                        case 4:setRegister(28,registerValue);
+                                break;
+                        case 5:setRegister(29,registerValue);
+                                break;
+                    }
+                }
+                uint32_t entryPoint;
+                fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
+                fread(&sizeLow, sizeof(uint8_t), 1, fileA);
+                entryPoint = (sizeHigh << 8) | sizeLow;  // Big-endian
+
+                uint32_t direccion_logica;
+                getRegister(26,&direccion_logica);
+                setRegister(3, (direccion_logica & 0xFFFFFFFF00000000 | entryPoint));
+                uint16_t base, tam;
+                getSegmentRange((direccion_logica >> 16), &base, &tam);
                 for (int i = 0; i < tam; i++) {
-                    fread(&opCode, sizeof(uint8_t), 1, file);
+                    fread(&opCode, sizeof(uint8_t), 1, fileA);
                     writeByte(base + i, opCode);
                 }
+                uint32_t KS;
+                getRegister(30,&KS);
+                if (KS != -1){
+                    getSegmentRange((KS >> 16), &base, &tam);
+                    for (int i = 0; i < tam; i++) {
+                        fread(&opCode, sizeof(uint8_t), 1, fileA);
+                        writeByte(base + i, opCode);
+                    }
+                }
+                opTable1[0x0B](offsetPosition);
+                opTable1[0x0B](argc);
+                opTable1[0x0B](0XFFFFFFFF);
             }
-            opTable1[0x0B](offsetPosition);
-            opTable1[0x0B](argc);
-            opTable1[0x0B](0XFFFFFFFF);
-        }
+    } else
+        if (fileB != NULL){ // Solo hay imagen
+            fread(&codeSize, sizeof(uint16_t), 1, fileB);
+            initMemory(codeSize);
+            int p;
+            uint32_t aux;
+            // Setteo de registros
+            for (p = 0; p < 32; p++){
+                fread(&aux, sizeof(uint32_t), 1, fileB);
+                setRegister(p,aux);
+            }
+            // Setteo de tabla
+            for (p = 0; p < 8; p++){
+                fread(&aux, sizeof(uint32_t), 1, fileB);
+                setSegmentTable(aux);
+            }
+            // Setteo de memoria
+            for (p = 0; p < memory.size; p++) {
+                fread(&opCode, sizeof(uint8_t), 1, fileB);
+                writeByte(p, opCode);
+            }
+        } else
+            return;
+
     if (debug) {
             printf("==========================================\n");
             printf("           DISASSEMBLER VMX25            \n");
@@ -294,7 +323,7 @@ void analizeHeader(FILE *file, int debug,int gotParams, , uint32_t offsetPositio
             printf("          STARTING EXECUTION             \n");
             printf("==========================================\n");
         }
-    beginExecution(file, debug);
+    beginExecution(fileB, debug);
 }
 
 int main(int argc, char* argv[]) {
@@ -423,8 +452,9 @@ int main(int argc, char* argv[]) {
     initSegmentTable();
     initOpTable();
 
-       if (gotParams && lista != NULL && offsets != NULL) {
-        uint32_t direccion_fisica = 0x0;
+    uint32_t direccion_fisica = 0xFFFFFFFF;
+
+    if (gotParams && lista != NULL && offsets != NULL) {
                
         // Escribir los strings en memoria
         for (int idx = 0; idx < j; idx++) {
@@ -433,7 +463,7 @@ int main(int argc, char* argv[]) {
                 direccion_fisica++;
             }
         }
-        offsetsPosition = direccion_fisica;         
+        // offsetsPosition = direccion_fisica;         
         setRegister(31,0x00000000);
 
         // Escribir los offsets en memoria
@@ -457,9 +487,17 @@ int main(int argc, char* argv[]) {
         setRegister(31,0xFFFFFFFF);
     }
 
+    analizeHeader(fileA, fileB, debug, gotParams, direccion_fisica, j);
+
+/*
     if (fileA != NULL) {
         analizeHeader(fileA, debug, gotParams,offsetPostion, j);
-    }
+
+    } else
+        if (fileB != NULL) {
+            analizeHeader(fileA,fileB, debug, gotParams,offsetPostion, j);            
+        }
+*/      
     // Liberar recursos
     if (fileA) {
         fclose(fileA);
@@ -473,7 +511,6 @@ int main(int argc, char* argv[]) {
     
     return 0;
 }
-
 
 /*
 gcc -o vmx.exe main.c src/components/memory.c src/components/registers.c src/components/segmentTable.c src/functions/directions.c src/functions/operations.c src/functions/noOperatorOperations.c src/functions/oneOperatorsOperations.c src/functions/twoOperatorsOperations.c

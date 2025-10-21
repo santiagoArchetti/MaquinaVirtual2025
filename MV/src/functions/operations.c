@@ -64,7 +64,7 @@ void initOpTable(void) {
     opTable2[0x1F] = op_rnd;  // RND
 
     // Operaciones con 1 operando
-    opTable1[0x00] = op_sys;  // SYS
+    // opTable1[0x00] = op_sys;  // SYS
     opTable1[0x01] = op_jmp;  // JMP
     opTable1[0x02] = op_jz;   // JZ
     opTable1[0x03] = op_jp;   // JP

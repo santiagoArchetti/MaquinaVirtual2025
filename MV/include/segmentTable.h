@@ -16,5 +16,7 @@ void writeBaseSegment(void);
 void getSegmentRange(int segment, uint16_t* valueBase, uint16_t* valueLength);
 void setSegmentDataLength(uint16_t dataLength);
 void initSegmentTable(void);
+void setSegmentTable(uint32_t dataLength);
+
 
 #endif
