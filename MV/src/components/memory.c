@@ -185,7 +185,7 @@ void readStack(uint32_t SP){
         readByte( physicalAddress + i, &mbrValue);
         mbr = (mbr << 8 | mbrValue);
     }
-    SP -= 4;
+    SP += 4;
     setRegister(2,mbr);
     setRegister(7,SP);
 }

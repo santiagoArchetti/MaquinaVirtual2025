@@ -220,7 +220,7 @@ void sys_string_read(){
         if (isValidAddress(direccion_fisica, ecx + 1, (uint16_t)(edx >> 16) )) {  // Vemos si hay espacio sufciente para escribir
             char car;
             
-            for (int i = 0; i <= ecx ; i++){
+            for (int i = 0; i < ecx ; i++){
                 scanf("%c",&car);
                 writeByte(direccion_fisica + i, car);
                 // Por si hay que hacer manejo de la memoria
@@ -391,12 +391,12 @@ void op_push(uint32_t op1) {
 
     getRegister(7,&SP);
     getRegister(29,&SS);
-
     
-    if ((SP & 0xFF - 4) < (SS & 0XFF)){ // si el valor es menor, es stack overflow
+    
+    if (((SP & 0xFFFF) - 4)  < (SS & 0XFFFF)){ // si el valor es menor, es stack overflow
         printf("ERROR: STACK OVERFLOW\n");
         setRegister(3,0xFFFFFFFF);
-    }else{
+    } else {
         uint32_t value;
         if(sizeOp1 == 1 ){ // registro
             int reg = op1 & 0xFF;
@@ -430,18 +430,19 @@ void op_pop(uint32_t op1){
 
     uint32_t SP;
     uint32_t SS;
+    uint16_t base, tam;
     uint8_t sizeOp1 = op1 >> 24;
 
     getRegister(7,&SP);
     getRegister(29,&SS);
 
     uint32_t direccion_fisica = getFisicalAddress(SP - 4);
+    getSegmentRange((SS >> 16), &base, &tam);
 
-    if (direccion_fisica > memory.size){
+    if ( (int32_t)(direccion_fisica) > (base + tam)){
         printf("ERROR: STACK UNDERFLOW");
         setRegister(3,0xFFFFFFFF);
-    }
-    else{
+    } else {
         uint32_t value;
 
         readStack(SP); // guarda en mbr tope de la pila

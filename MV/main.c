@@ -7,6 +7,7 @@
 #include "include/registers.h"
 #include "include/segmentTable.h"
 #include "include/directions.h"
+#include "include/oneOperatorsOperations.h"
 
 void beginExecution(FILE *filei, int debug) {
 
@@ -236,6 +237,10 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 for (int ii = 0; ii < 6; ii++) {
                     fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
                     fread(&sizeLow, sizeof(uint8_t), 1, fileA);
+                    
+                    if ((sizeHigh << 8) | sizeLow) 
+                        setSegmentDataLength((uint32_t) ((sizeHigh << 8) | sizeLow));
+                    
                     if ( ii < 5)        // gotParams es 1 o 0
                         vec[ii + 1 - gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
                     else
@@ -244,7 +249,6 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 int emptySeg = 0;
                 for (int ii = 0; ii < 5; ii++){
                     if (vec[ii] != 0) {
-                        setSegmentDataLength(vec[ii]);
                         registerValue = (uint32_t) (( ((uint32_t) ii - emptySeg) << 16 ) | (0x0));
                     }else{
                         registerValue = 0xFFFFFFFF;
@@ -282,7 +286,7 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 
                 uint32_t KS;
                 getRegister(30,&KS);
-                if (KS != -1){
+                if (KS != 0xFFFFFFFF){
                     getSegmentRange((KS >> 16), &base, &tam);
                     for (int i = 0; i < tam; i++) {
                         fread(&opCode, sizeof(uint8_t), 1, fileA);

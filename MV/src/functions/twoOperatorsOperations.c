@@ -933,11 +933,11 @@ void op_rnd(uint32_t op1, uint32_t op2) {
             setRegister(reg1, a);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registr
-            a = (uint32_t)rand() % (op2 & 0xFFFF + 1); // Para generalizar setCondicion
+            a = (uint32_t)rand() % ((op2 & 0xFFFF) + 1); // Para generalizar setCondicion
             setRegister(reg1, a);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
-            a = (uint32_t)rand() % (op2 & 0xFFFF + 1);
+            a = (uint32_t)rand() % ((op2 & 0xFFFF) + 1);
             setRegister(2, a);
             writeMemory(op1);
     
