@@ -165,11 +165,11 @@ void writeStack(uint32_t SP) {
     uint32_t logicalAddress, physicalAddress, mbr;
 
     SP -= 4;
-    memoryAccess((SP >> 16), (SP & 0xFFFF), &logicalAddress, &physicalAddress, 0x4);
+    memoryAccess((SP >> 16), (SP & 0xFFFF), &logicalAddress, &physicalAddress, 0x0);
     getRegister(2, &mbr);
 
     for (int i = 0; i < 4; i++)
-        writeByte( (physicalAddress + i), (uint8_t) (mbr >> (3 - i)) );    // Escritura big-endian
+        writeByte( (physicalAddress + i), (uint8_t) (mbr >> ((3 - i) * 8)) );    // Escritura big-endian
     
     setRegister(7,SP);
 }
@@ -179,13 +179,13 @@ void readStack(uint32_t SP){
     uint8_t mbrValue;
     uint32_t logicalAddress, physicalAddress, mbr = 0x0;
 
-    memoryAccess((SP >> 16), (SP & 0xFFFF), &logicalAddress, &physicalAddress, 0x4);
+    memoryAccess((SP >> 16), (SP & 0xFFFF), &logicalAddress, &physicalAddress, 0x0);
 
     for (int i = 0; i < 4; i++){
         readByte( physicalAddress + i, &mbrValue);
-        SP--;
         mbr = (mbr << 8 | mbrValue);
     }
+    SP -= 4;
     setRegister(2,mbr);
     setRegister(7,SP);
 }

@@ -18,13 +18,13 @@ void beginExecution(FILE *filei, int debug) {
     getSegmentRange((csValue >> 16), &baseCodeSegment, &codeSegmentValueLength);
     uint8_t opCode;
 
-    while (IP < baseCodeSegment + codeSegmentValueLength && IP >= baseCodeSegment && IP != 0xFFFFFFFF) {
+    while ((baseCodeSegment + (IP & 0xFFFF) < baseCodeSegment + codeSegmentValueLength) && (baseCodeSegment + (IP & 0xFFFF) >= baseCodeSegment)) {
         logicalAddress = getLogicalAddress(csValue, IP);
         fisicalAddress = getFisicalAddress(logicalAddress);
         // Guardar IP antes de ejecutar la operación
         uint32_t IPBeforeExecution = IP;
         
-        if (isValidAddress(fisicalAddress, 1, csValue)) {
+        if (isValidAddress(fisicalAddress, 1, (uint16_t) (csValue >> 16))) {
             uint8_t Value;
             readByte(fisicalAddress, &Value); //trae el dato del mbr
             opCode = (uint8_t)(Value & 0xFF);
@@ -43,7 +43,7 @@ void beginExecution(FILE *filei, int debug) {
             
             setRegister(3,IP + op1Bytes + op2Bytes + 1);
             IP += 1;
-            
+
             if (opCodeExists(opCode)){
 
                 uint32_t operandA = 0, operandB = 0;
@@ -197,7 +197,8 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
         return;
     }
 
-    if ( strncmp(header, "VMX25", 5) != 0 || (version != 0x01 && version != 0x02) ) {
+    if ( (strncmp(header, "VMX25", 5) != 0 || (version != 0x01 && version != 0x02)) &&
+         (strncmp(header, "VMI25", 5) != 0 || (version != 0x01)) ) {
         printf("Error: File not valid (Header: %.5s, Version: 0x%02X)\n", header, version);
         return;
     }
@@ -232,10 +233,10 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 uint32_t registerValue;
                 uint32_t vec[5];
 
-                for (int ii = 0; ii < 6; ii++) { 
+                for (int ii = 0; ii < 6; ii++) {
                     fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
                     fread(&sizeLow, sizeof(uint8_t), 1, fileA);
-                    if ( ii < 5)
+                    if ( ii < 5)        // gotParams es 1 o 0
                         vec[ii + 1 - gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
                     else
                         vec[0 + gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
@@ -262,20 +263,23 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                                 break;
                     }
                 }
+
                 uint32_t entryPoint;
                 fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
                 fread(&sizeLow, sizeof(uint8_t), 1, fileA);
                 entryPoint = (sizeHigh << 8) | sizeLow;  // Big-endian
 
                 uint32_t direccion_logica;
-                getRegister(26,&direccion_logica);
-                setRegister(3, (direccion_logica & 0xFFFFFFFF00000000 | entryPoint));
                 uint16_t base, tam;
+                getRegister(26, &direccion_logica);
                 getSegmentRange((direccion_logica >> 16), &base, &tam);
+                setRegister(3, base + entryPoint);
+                
                 for (int i = 0; i < tam; i++) {
                     fread(&opCode, sizeof(uint8_t), 1, fileA);
                     writeByte(base + i, opCode);
                 }
+                
                 uint32_t KS;
                 getRegister(30,&KS);
                 if (KS != -1){
@@ -285,9 +289,14 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                         writeByte(base + i, opCode);
                     }
                 }
-                opTable1[0x0B](offsetPosition);
+                if (offsetPosition == 0)
+                    opTable1[0x0B](0xFFFFFFFF);
+                else
+                    opTable1[0x0B](offsetPosition);
+
                 opTable1[0x0B](argc);
                 opTable1[0x0B](0XFFFFFFFF);
+                setRegister(7, memory.size); // SP al final de la memoria
             }
     } else
         if (fileB != NULL){ // Solo hay imagen
@@ -452,7 +461,8 @@ int main(int argc, char* argv[]) {
     initSegmentTable();
     initOpTable();
 
-    uint32_t direccion_fisica = 0xFFFFFFFF;
+    uint32_t direccion_fisica = 0x0;
+    uint32_t argcPos = 0xFFFFFFFF;
 
     if (gotParams && lista != NULL && offsets != NULL) {
                
@@ -462,8 +472,9 @@ int main(int argc, char* argv[]) {
                 writeByte(direccion_fisica, lista[idx][k]);
                 direccion_fisica++;
             }
-        }
-        // offsetsPosition = direccion_fisica;         
+        }        
+        argcPos = direccion_fisica;
+        
         setRegister(31,0x00000000);
 
         // Escribir los offsets en memoria
@@ -487,17 +498,8 @@ int main(int argc, char* argv[]) {
         setRegister(31,0xFFFFFFFF);
     }
 
-    analizeHeader(fileA, fileB, debug, gotParams, direccion_fisica, j);
-
-/*
-    if (fileA != NULL) {
-        analizeHeader(fileA, debug, gotParams,offsetPostion, j);
-
-    } else
-        if (fileB != NULL) {
-            analizeHeader(fileA,fileB, debug, gotParams,offsetPostion, j);            
-        }
-*/      
+    analizeHeader(fileA, fileB, debug, gotParams, argcPos, j);
+     
     // Liberar recursos
     if (fileA) {
         fclose(fileA);

@@ -70,7 +70,7 @@ void op_add(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){            // De registro a registro
@@ -133,7 +133,7 @@ void op_sub(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
@@ -196,7 +196,7 @@ void op_mul(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
@@ -343,7 +343,7 @@ void op_cmp(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
@@ -443,7 +443,7 @@ void op_shl(uint32_t op1, uint32_t op2) {
             b = mbrValue;
             setRegister(reg1, a << b);
         }
-        setCondicion(b << a);
+        setCondicion(a << b);
     }
 }
 
@@ -515,7 +515,7 @@ void op_sar(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
@@ -531,13 +531,10 @@ void op_sar(uint32_t op1, uint32_t op2) {
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
             getRegister(2, &mbrValue);
+            a = mbrValue;
+            b = op2 & 0xFFFF;
             
-            int32_t a_signed = (int32_t)mbrValue;   // interpretar con semptySeg
-            uint32_t b = op2 & 0xFFFF;              // el inmediato, sin semptySeg
-            
-            int32_t result = a_signed >> b;         // shift aritmético (mantiene semptySeg)
-            
-            setRegister(2, (uint32_t)result);       // lo guardás de nuevo en el registro
+            setRegister(2, (uint32_t)a >> b);       // lo guardas de nuevo en el registro
             writeMemory(op1);
             
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
@@ -578,7 +575,7 @@ void op_and(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
@@ -636,7 +633,7 @@ void op_or(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
@@ -695,7 +692,7 @@ void op_xor(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
@@ -754,7 +751,7 @@ void op_swap(uint32_t op1, uint32_t op2) {
     if ( sizeOp1 == 2 || sizeOp2 == 2){ // Porque no se puede intercambiar con un valor inmediato
         setRegister(3,0xFFFFFFFF);
     } else {
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
@@ -804,7 +801,7 @@ void op_ldl(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
@@ -867,7 +864,7 @@ void op_ldh(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
@@ -927,7 +924,7 @@ void op_rnd(uint32_t op1, uint32_t op2) {
         setRegister(3,0xFFFFFFFF);
     } else {
         uint8_t sizeOp2 = op2 >> 24;
-        uint32_t a,b;
+        int32_t a,b;
         int reg1 = binADecimal(op1);
         int reg2 = binADecimal(op2);
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro

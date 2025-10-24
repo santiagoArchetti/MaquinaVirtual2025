@@ -25,14 +25,14 @@ void setRegister(int regIndex, uint32_t value) {
     aux = registers.registerValue[index];
 
     switch ((reg >> 6) & 0x03) {
-        case 0x1: // parte baja (bytes 2-3)
-            value = (aux & 0xFFFFFFFFFFFF0000) | (value & 0x0000FFFF);
+        case 0x1:                   // parte baja-baja (byte 0)
+            value = (aux & 0xFFFFFF00) | (value & 0xFF);
             break;
-        case 0x2: // parte alta (bytes 0-1)
-            value = (aux & 0xFFFFFFFF0000FFFF) | ((value & 0x0000FFFF) << 8);
+        case 0x2:                   // parte alta-baja (byte 1)
+            value = (aux & 0xFFFF00FF) | ((value & 0xFF) << 8);
             break;
-        case 0x3: 
-            value = (aux & 0xFFFFFFFF00000000) | (value & 0xFFFFFFFF);
+        case 0x3:                   // Dos bytes menos significativos
+            value = (aux & 0xFFFF0000) | (value & 0xFFFF);
             break;
     }
 
@@ -53,17 +53,19 @@ void getRegister(int regIndex, uint32_t* value) {
     *value = registers.registerValue[index];
 
     switch ((reg >> 6) & 0x03) {
-        case 0x1: // parte baja (bytes 2-3)
-            *value &= 0xFFFF;
+        case 0x1:       // parte baja (byte 0)
+            *value &= 0xFF;
             break;
-        case 0x2: // parte alta (bytes 0-1)
-            *value = (*value >> 8) & 0xFFFF;
+        case 0x2:       // parte alta (byte 1)
+            *value = (*value >> 8) & 0xFF;
             break;
-        case 0x3: // Dos bytes menos significativos
-            *value &= 0xFFFFFFFF; 
+        case 0x3:       // Dos bytes menos significativos
+            *value &= 0xFFFF; 
             break;
-    }
+    }   
 }
+
+
 
 int opCodeExists(uint8_t opCode){
     opCode = opCode & 0x1F;

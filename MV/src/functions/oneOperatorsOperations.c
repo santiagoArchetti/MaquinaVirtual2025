@@ -11,7 +11,7 @@
 void setImage(FILE *arch){
     
     // Creacion de cabecera
-    char header[5] = "VMX25";
+    char header[5] = "VMI25";
     uint8_t version = 0x1;
     fwrite(&header, sizeof(uint8_t), 5, arch);
     fwrite(&version, sizeof(uint8_t), 1, arch);
@@ -46,21 +46,12 @@ void op_sys(uint32_t op1, FILE *arch) {
         case 0x03: sys_string_read(); break;
         case 0x04: sys_string_write(); break;
         case 0x07: sys_clear_screen(); break;
-        case 0x1F: sys_breakpoint(arch); break;
+        case 0x0F: sys_breakpoint(arch); break;
         default: {
             printf("Error: SYS code invalid: %u\n", op1);
             setRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
         } break;    // el default lleva break?
     }
-    /*
-    if (operacionCode == 01) {
-        sys_read();
-    } else if (operacionCode == 02) {
-        sys_write();
-    } else {
-        printf("Error: SYS code invalid: %u\n", op1);
-        setRegister(3, 0xFFFFFFFF); // Terminar ejecucion por error
-    }*/
 }
 
 void sys_read() {
@@ -82,7 +73,7 @@ void sys_read() {
         
         // Mostrar prompt con direccion fisica
         printf("[%04X]: ", (direccion_fisica & 0xFFFF));
-        if (isValidAddress(direccion_fisica,1, ((edx >> 16) & 0xFFFF) )) {    
+        if (isValidAddress(direccion_fisica,1, (uint16_t)((edx >> 16) & 0xFFFF) )) {    
             if (eax & 0x01) {                               // Decimal
                 int32_t valor;
                 scanf("%d", &valor);
@@ -225,20 +216,43 @@ void sys_string_read(){
     uint32_t direccion_actual = edx;    // probablemente no necesario
     uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
         
-    if (isValidAddress(direccion_fisica, ecx + 1, (uint16_t)(edx >> 16) )) {  // Vemos si hay espacio sufciente para escribir
-        char car;
-        for (int i = 0; i <= ecx ; i++){
-            scanf("%c",&car);
-            writeByte(direccion_fisica + i, car);
-            // Por si hay que hacer manejo de la memoria
-            memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
-            setRegister(2, car);
+    if (ecx > 0) {
+        if (isValidAddress(direccion_fisica, ecx + 1, (uint16_t)(edx >> 16) )) {  // Vemos si hay espacio sufciente para escribir
+            char car;
+            
+            for (int i = 0; i <= ecx ; i++){
+                scanf("%c",&car);
+                writeByte(direccion_fisica + i, car);
+                // Por si hay que hacer manejo de la memoria
+                memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
+                setRegister(2, car);
+            }
+            writeByte(direccion_fisica + ecx + 1,'\0');   // Le agregamos el caracter nulo
+        } else {
+            printf("Error: Espacio en memoria insuficiente.");
+            setRegister(3,0xFFFFFFFF);
         }
-        writeByte(direccion_fisica + ecx + 1,'\0');   // Le agregamos el caracter nulo
-    } else {
-        printf("Error: Espacio en memoria insuficiente.");
-        setRegister(3,0xFFFFFFFF);
-    }
+    } else
+        if (ecx == -1){
+            char car = ' ';
+            int i = 0;
+            while ( isValidAddress(direccion_fisica + i, 1, (uint16_t)(edx >> 16) ) && (car != '\0') ) {
+                scanf("%c",&car);
+                writeByte(direccion_fisica + i, car);
+                memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
+                setRegister(2, car);
+                i++;
+            }
+            if (isValidAddress(direccion_fisica + i, 1, (uint16_t)(edx >> 16) ))
+              writeByte(direccion_fisica + i, '\0');
+            else {
+                printf("Error: Espacio en memoria insuficiente.");
+                 setRegister(3,0xFFFFFFFF);
+            }      
+        } else {
+            printf("Error: Invalid Operation ECX incorrect Value for this operation.");
+            setRegister(3,0xFFFFFFFF);
+        }
 }
 
 void sys_string_write(){
@@ -266,7 +280,11 @@ void sys_string_write(){
 }
 
 void sys_clear_screen(){
-    system("clear");
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
 }
 
 void sys_breakpoint(FILE *arch){
@@ -274,8 +292,8 @@ void sys_breakpoint(FILE *arch){
     scanf("%c", &stop);
     switch (stop) {
         case 'q': setRegister(3,0xFFFFFFFF); break;
-        case 'g': flag = 0;
-        case '\0': flag = 1;
+        case 'g': flag = 0; break;
+        case '\0': flag = 1; break;
         default: {
             printf("ERROR: el caracter (%c) ingresado es invalido",stop);
             setRegister(3,0xFFFFFFFF);
@@ -365,7 +383,7 @@ void op_not(uint32_t op1) {
     }
 }
 
-void op_push(uint32_t op1){
+void op_push(uint32_t op1) {
 
     uint32_t SP;
     uint32_t SS;
@@ -374,27 +392,36 @@ void op_push(uint32_t op1){
     getRegister(7,&SP);
     getRegister(29,&SS);
 
-    if ((SP - 4) < SS){ // si el valor es menor, es stack overflow
+    
+    if ((SP & 0xFF - 4) < (SS & 0XFF)){ // si el valor es menor, es stack overflow
         printf("ERROR: STACK OVERFLOW\n");
         setRegister(3,0xFFFFFFFF);
     }else{
         uint32_t value;
         if(sizeOp1 == 1 ){ // registro
-            int reg1 = binADecimal(op1);
-            getRegister(reg1, &value); // obtengo valor que hay en el registro de op1
+            int reg = op1 & 0xFF;
+            uint32_t aux;
+            getRegister(reg, &aux);
+
+            uint8_t part = (op1 >> 6) & 0x03;
+            if (part == 1 || part == 2)         // AL o AH
+                aux = (int8_t)aux;
+            else
+                if (part == 3)                  // AX
+                    aux = (int16_t)aux;
+
+            value = aux; 
             setRegister(2,value);
+             
         } else
             if (sizeOp1 == 2) { // inmediato
-                value = op1 & 0xFFFF;
-                if ( ((uint16_t)value & 0xFFFF) < 0)
-                    value |= 0xFFFF0000;
+                value = (int16_t)(op1 & 0xFFFF); // sign extension correcta
                 setRegister(2,value);   // Setteo MBR
             }
             else
                 if (sizeOp1 == 3){ // memoria
                     readMemory(op1);
                 }
-
         writeStack(SP); // guarda nuevo dato en tope de la pila
     }
 }
@@ -408,7 +435,9 @@ void op_pop(uint32_t op1){
     getRegister(7,&SP);
     getRegister(29,&SS);
 
-    if ((SP + 4) > memory.size){
+    uint32_t direccion_fisica = getFisicalAddress(SP - 4);
+
+    if (direccion_fisica > memory.size){
         printf("ERROR: STACK UNDERFLOW");
         setRegister(3,0xFFFFFFFF);
     }
@@ -420,7 +449,15 @@ void op_pop(uint32_t op1){
         if (sizeOp1 == 1){ // registro
             uint32_t reg1 = binADecimal(op1);
             getRegister(2,&value);
-            setRegister(reg1,value);
+
+            int reg = op1 & 0x1F;
+            uint8_t part = (op1 >> 6) & 0x03;
+
+            // Ajustar tamaño antes de escribir
+            if (part == 1 || part == 2) value &= 0xFF;   // AL y AH
+            if (part == 3) value &= 0xFFFF; // AX
+
+            setRegister(reg, value);
         }
         else
             if (sizeOp1 == 3) { // memoria
@@ -437,6 +474,6 @@ void op_call (uint32_t op1){
     uint32_t IP;
     getRegister(3,&IP);     // obtengo IP
     setRegister(2,IP);      // guardo valor del IP en mbr
-    op_push(IP);            // pusheo IP (mando IP solo porque pide un operando, pero no es necesario, el mbr ya esta modificado)
+    op_push(0x01000003);    // pusheo IP (mando IP solo porque pide un operando, pero no es necesario, el mbr ya esta modificado)
     op_jmp(op1);            // verificar que funcione correctamente con la subrutina
 }
