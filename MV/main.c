@@ -19,7 +19,7 @@ void beginExecution(FILE *filei, int debug) {
     getSegmentRange((csValue >> 16), &baseCodeSegment, &codeSegmentValueLength);
     uint8_t opCode;
 
-    printf("IP: %08X\nbaseCodeSegment: %04X\nCodeSegmentLength: %04X", IP, baseCodeSegment, codeSegmentValueLength);
+    // printf("IP: %08X\nbaseCodeSegment: %04X\nCodeSegmentLength: %04X\n", IP, baseCodeSegment, codeSegmentValueLength);
     while ((baseCodeSegment + (IP & 0xFFFF) < baseCodeSegment + codeSegmentValueLength) && (baseCodeSegment + (IP & 0xFFFF) >= baseCodeSegment)) {
         logicalAddress = getLogicalAddress(csValue, IP);
         fisicalAddress = getFisicalAddress(logicalAddress);
@@ -170,8 +170,8 @@ void beginExecution(FILE *filei, int debug) {
 
     getRegister(3, &IP);
     if (debug && IP != 0xFFFFFFFF) {
-        printf("=========================================\n");
-        printf("           END OF DISASSEMBLER          \n");
+        printf("==========================================\n");
+        printf("            END OF DISASSEMBLER           \n");
         printf("==========================================\n");
     } else {
         if (IP == 0xFFFFFFFF) {
@@ -199,15 +199,11 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
         return;
     }
 
-    printf("lei los headers\n");
-
     if ( (strncmp(header, "VMX25", 5) != 0 || (version != 0x01 && version != 0x02)) &&
          (strncmp(header, "VMI25", 5) != 0 || (version != 0x01)) ) {
         printf("Error: File not valid (Header: %.5s, Version: 0x%02X)\n", header, version);
         return;
     }
-
-    printf("compare los headers\n");
 
     if (fileA != NULL){
         if (version == 0x01) {
@@ -216,7 +212,6 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
             fread(&sizeLow, sizeof(uint8_t), 1, fileA);
             codeSize = (sizeHigh << 8) | sizeLow;  // Big-endian
             
-            printf("Size of the code: %u bytes\n", codeSize);
             setSegmentDataLength(codeSize);
             setSegmentDataLength(16384 - codeSize);
 
@@ -236,7 +231,6 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
             
         } else
             if (version == 0x02) {
-                printf("analizo header version 2\n");
                 uint8_t sizeHigh, sizeLow;
                 uint32_t registerValue;
                 uint32_t vec[5];
@@ -247,7 +241,6 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                     
                     if ((sizeHigh << 8) | sizeLow) 
                         setSegmentDataLength((uint32_t) ((sizeHigh << 8) | sizeLow));
-                        printf("\ntam del segmento: %d\n",(sizeHigh << 8) | sizeLow);
                     if ( ii < 5)        // gotParams es 1 o 0
                         vec[ii + 1 - gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
                     else
@@ -275,27 +268,20 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                     }
                 }
 
-                printf("setee los registros\n");
-
                 uint32_t entryPoint;
                 fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
                 fread(&sizeLow, sizeof(uint8_t), 1, fileA);
                 entryPoint = (sizeHigh << 8) | sizeLow;  // Big-endian
-                printf("el entry point es: %08X\n",entryPoint);
                 uint32_t direccion_logica;
                 uint16_t base, tam;
                 getRegister(26, &direccion_logica);
                 getSegmentRange((direccion_logica >> 16), &base, &tam);
                 setRegister(3, base + entryPoint);
                 
-                printf("la mardita base + entry point: %08X\n",base + entryPoint);
-
                 for (int i = 0; i < tam; i++) {
                     fread(&opCode, sizeof(uint8_t), 1, fileA);
                     writeByte(base + i, opCode);
                 }
-
-                printf("lei el cs\n");
                 
                 uint32_t KS;
                 getRegister(30,&KS);
@@ -307,7 +293,6 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                     }
                 }
 
-                printf("leo el ks\n");
                 /*
                 if (offsetPosition == 0)
                     opTable1[0x0B](0xFFFFFFFF);
@@ -347,7 +332,6 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
         } else { 
             return;
         }
-    printf("sali\n");
     if (debug) {
             printf("==========================================\n");
             printf("           DISASSEMBLER VMX25            \n");
@@ -379,15 +363,11 @@ int main(int argc, char* argv[]) {
     printf("              VMX25 EMULATOR MACHINE              \n");
     printf("==========================================\n");
     
-    int i = 1;
-    int len;
+    int i = 1, len;
     FILE *fileA = NULL;
     FILE *fileB = NULL;
-    int memorySize = 16384;
-    int debug = 0;
-    int gotVmx = 0;
-    int gotParams = 0;
-    
+    int memorySize = 16384, debug = 0, gotVmx = 0, gotParams = 0;
+
     // Variables para parámetros
     char **lista = NULL;
     uint32_t *offsets = NULL;
@@ -428,49 +408,52 @@ int main(int argc, char* argv[]) {
             }
         }
         // Opción de debug
-        else if (strcmp(argv[i], "-d") == 0) {
-            debug = 1;
-        }
-        // Opción de parámetros
-        else if (strcmp(argv[i], "-P") == 0) {
-            if (!gotVmx) {
-                printf("Error: VMX file must be specified before -P option\n");
-                return 1;
-            }
-            gotParams = 1;
-            
-            // Reservar memoria para los parámetros
-            lista = malloc(50 * sizeof(char*));
-            offsets = malloc(50 * sizeof(uint32_t));
-            
-            if (lista == NULL || offsets == NULL) {
-                printf("Error: Cannot allocate memory for parameters\n");
-                return 1;
-            }
-            
-            i++; // Avanzar al primer parámetro
-            
-            // Capturar todos los argumentos restantes como parámetros
-            while (i < argc && j < 50) {
-                lista[j] = malloc(strlen(argv[i]) + 1);
-                if (lista[j] == NULL) {
-                    printf("Error: Cannot allocate memory for parameter %d\n", j);
-                    // Liberar memoria ya reservada
-                    for (int k = 0; k < j; k++) {
-                        free(lista[k]);
-                    }
-                    free(lista);
-                    free(offsets);
-                    return 1;
+        else
+            if (argv[i][0] == '-') {
+                if (argv[i][1] == 'd') {
+                    debug = 1;
                 }
-                strcpy(lista[j], argv[i]);
-                offsets[j] = offsetAcum;
-                offsetAcum += strlen(lista[j]) + 1; // +1 para el null terminator
-                j++;
-                i++;
+                // Opción de parámetros
+                else if (argv[i][1] == 'p') {
+                    if (!gotVmx) {
+                        printf("Error: VMX file must be specified before -P option\n");
+                        return 1;
+                    }
+                    gotParams = 1;
+                    
+                    // Reservar memoria para los parámetros
+                    lista = malloc(50 * sizeof(char*));
+                    offsets = malloc(50 * sizeof(uint32_t));
+                    
+                    if (lista == NULL || offsets == NULL) {
+                        printf("Error: Cannot allocate memory for parameters\n");
+                        return 1;
+                    }
+                    
+                    i++; // Avanzar al primer parámetro
+                    
+                    // Capturar todos los argumentos restantes como parámetros
+                    while (i < argc && j < 50) {
+                        lista[j] = malloc(strlen(argv[i]) + 1);
+                        if (lista[j] == NULL) {
+                            printf("Error: Cannot allocate memory for parameter %d\n", j);
+                            // Liberar memoria ya reservada
+                            for (int k = 0; k < j; k++) {
+                                free(lista[k]);
+                            }
+                            free(lista);
+                            free(offsets);
+                            return 1;
+                        }
+                        strcpy(lista[j], argv[i]);
+                        offsets[j] = offsetAcum;
+                        offsetAcum += strlen(lista[j]) + 1; // +1 para el null terminator
+                        j++;
+                        i++;
+                    }
+                    break; // Salir del while principal
+                }
             }
-            break; // Salir del while principal
-        }
         i++;
     }
 
@@ -491,7 +474,7 @@ int main(int argc, char* argv[]) {
     uint32_t argcPos = 0xFFFFFFFF;
 
     if (gotParams && lista != NULL && offsets != NULL) {
-               
+
         // Escribir los strings en memoria
         for (int idx = 0; idx < j; idx++) {
             for (int k = 0; k <= strlen(lista[idx]); k++) { // Incluye null terminator
@@ -500,7 +483,22 @@ int main(int argc, char* argv[]) {
             }
         }
         argcPos = direccion_fisica;
-        
+        /*
+        memory.data[memorySize - 3] = (argcPos >> 24) & 0xFF;
+        memory.data[memorySize - 2] = (argcPos >> 16) & 0xFF;
+        memory.data[memorySize - 1] = (argcPos >> 8) & 0xFF;
+        memory.data[memorySize - 0] = argcPos & 0xFF;
+
+        memory.data[memorySize - 7] = (j >> 24) & 0xFF;
+        memory.data[memorySize - 6] = (j >> 16) & 0xFF;
+        memory.data[memorySize - 5] = (j >> 8) & 0xFF;
+        memory.data[memorySize - 4] = j & 0xFF;
+
+        memory.data[memorySize - 11] = 0xFF;
+        memory.data[memorySize - 10] = 0xFF;
+        memory.data[memorySize - 9] = 0xFF;
+        memory.data[memorySize - 8] = 0xFF;
+        */
         setRegister(31,0x00000000);
 
         // Escribir los offsets en memoria
@@ -520,7 +518,23 @@ int main(int argc, char* argv[]) {
         setSegmentDataLength(direccion_fisica);
         free(lista);
         free(offsets);
-    } else{
+    } else{/*
+        if (gotParams == 0){
+            memory.data[memorySize - 3] = 0xFF;
+            memory.data[memorySize - 2] = 0xFF;
+            memory.data[memorySize - 1] = 0xFF;
+            memory.data[memorySize - 0] = 0xFF;
+
+            memory.data[memorySize - 7] = 0x0;
+            memory.data[memorySize - 6] = 0x0;
+            memory.data[memorySize - 5] = 0x0;
+            memory.data[memorySize - 4] = 0x0;
+
+            memory.data[memorySize - 11] = 0xFF;
+            memory.data[memorySize - 10] = 0xFF;
+            memory.data[memorySize - 9] = 0xFF;
+            memory.data[memorySize - 8] = 0xFF;
+        }*/
         setRegister(31,0xFFFFFFFF);
     }
 

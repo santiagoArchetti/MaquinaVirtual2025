@@ -533,8 +533,7 @@ void op_sar(uint32_t op1, uint32_t op2) {
             getRegister(2, &mbrValue);
             a = mbrValue;
             b = op2 & 0xFFFF;
-            
-            setRegister(2, (uint32_t)a >> b);       // lo guardas de nuevo en el registro
+            setRegister(2, a >> b);       // lo guardas de nuevo en el registro
             writeMemory(op1);
             
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
