@@ -19,10 +19,10 @@ void beginExecution(FILE *filei, int debug) {
     getSegmentRange((csValue >> 16), &baseCodeSegment, &codeSegmentValueLength);
     uint8_t opCode;
 
-    // printf("IP: %08X\nbaseCodeSegment: %04X\nCodeSegmentLength: %04X\n", IP, baseCodeSegment, codeSegmentValueLength);
     while ((baseCodeSegment + (IP & 0xFFFF) < baseCodeSegment + codeSegmentValueLength) && (baseCodeSegment + (IP & 0xFFFF) >= baseCodeSegment)) {
-        logicalAddress = getLogicalAddress(csValue, IP);
+        logicalAddress = getLogicalAddress(csValue >> 16, IP & 0xFFFF);
         fisicalAddress = getFisicalAddress(logicalAddress);
+        
         // Guardar IP antes de ejecutar la operación
         uint32_t IPBeforeExecution = IP;
         
@@ -233,50 +233,103 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
             if (version == 0x02) {
                 uint8_t sizeHigh, sizeLow;
                 uint32_t registerValue;
-                uint32_t vec[5];
+                uint32_t vec[5] = {0x0}, taman[5] = {0x0};
 
-                for (int ii = 0; ii < 6; ii++) {
+                for (int ii = 0; ii < 5; ii++) {
                     fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
                     fread(&sizeLow, sizeof(uint8_t), 1, fileA);
                     
-                    if ((sizeHigh << 8) | sizeLow) 
-                        setSegmentDataLength((uint32_t) ((sizeHigh << 8) | sizeLow));
-                    if ( ii < 5)        // gotParams es 1 o 0
-                        vec[ii + 1 - gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
-                    else
-                        vec[0 + gotParams] = (uint32_t) (( ((uint32_t) ii) << 16 ) | (0x0));
+                    vec[ii] = (uint32_t) (( ((uint32_t) ii + gotParams) << 16 ) | (0x0));
+                    taman[ii] = (uint32_t) (((uint16_t)sizeHigh << 8) | sizeLow);
+                    /*
+                    if ( ii < 4) {        // gotParams es 1 o 0
+                        vec[ii + 1] = (uint32_t) (( ((uint32_t) ii + gotParams) << 16 ) | (0x0));
+                        taman[ii + 1] = (uint32_t) (((uint16_t)sizeHigh << 8) | sizeLow);
+                    } else {
+                        vec[0] = (uint32_t) (( ((uint32_t) ii + gotParams) << 16 ) | (0x0));
+                        taman[0] = (uint32_t) (((uint16_t)sizeHigh << 8) | sizeLow);
+                    } */
                 }
                 int emptySeg = 0;
-                for (int ii = 0; ii < 5; ii++){
-                    if (vec[ii] != 0) {
-                        registerValue = (uint32_t) (( ((uint32_t) ii - emptySeg) << 16 ) | (0x0));
+                if (taman[0] != 0x0) {
+                    registerValue = (uint32_t) (( ((uint32_t) gotParams) << 16 ) | (0x0));
+                    setSegmentDataLength(taman[0]);
+                }else{
+                    registerValue = 0xFFFFFFFF;
+                    emptySeg++;
+                }
+                setRegister(26,registerValue);
+
+                for (int ii = 1; ii < 5; ii++){
+                    if (taman[ii] != 0x0) {
+                        registerValue = (uint32_t) (( ((uint32_t) ii + gotParams - emptySeg) << 16 ) | (0x0));
+                        setSegmentDataLength(taman[ii]);
                     }else{
                         registerValue = 0xFFFFFFFF;
-                        emptySeg++;            
+                        emptySeg++;
                     }
                     switch (ii) {
-                        case 1:setRegister(30,registerValue);
-                                break; 
-                        case 2:setRegister(26,registerValue);
-                                break;
-                        case 3:setRegister(27,registerValue);
-                                break;
-                        case 4:setRegister(28,registerValue);
-                                break;
-                        case 5:setRegister(29,registerValue);
-                                break;
+                            case 0:setRegister(26,registerValue);
+                                    break; 
+                            case 1:setRegister(27,registerValue);
+                                    break;
+                            case 2:setRegister(28,registerValue);
+                                    break;
+                            case 3:setRegister(29,registerValue);
+                                    break;
+                            case 4:setRegister(30,registerValue);
+                                    break;
                     }
+                    /*
+                    if (gotParams == 1){
+                        switch (ii) {
+                            case 0:setRegister(30,registerValue);
+                                    break; 
+                            case 1:setRegister(26,registerValue);
+                                    break;
+                            case 2:setRegister(27,registerValue);
+                                    break;
+                            case 3:setRegister(28,registerValue);
+                                    break;
+                            case 4:setRegister(29,registerValue);
+                                    break;
+                        }
+                    } else {
+                        switch (ii) {
+                            case 1:setRegister(30,registerValue);
+                                    break;
+                            case 2:setRegister(26,registerValue);
+                                    break; 
+                            case 3:setRegister(27,registerValue);
+                                    break;
+                            case 4:setRegister(28,registerValue);
+                                    break;
+                            case 5:setRegister(29,registerValue);
+                                    break;
+                        }
+                    }*/
                 }
+
+                uint32_t CS,DS,SS1,KS1,ES,PS;
+                getRegister(26,&CS);
+                getRegister(27,&DS);
+                getRegister(28,&ES);
+                getRegister(29,&SS1);
+                getRegister(30,&KS1);
+                getRegister(31,&PS);
+                printf("CS: %08X\nDS: %08X\nES: %08X\nSS: %08X\nKS: %08X\nPS: %08X\n",CS,DS,ES,SS1,KS1,PS);
 
                 uint32_t entryPoint;
                 fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
                 fread(&sizeLow, sizeof(uint8_t), 1, fileA);
-                entryPoint = (sizeHigh << 8) | sizeLow;  // Big-endian
+                entryPoint = ((uint16_t)sizeHigh << 8) | sizeLow;  // Big-endian
                 uint32_t direccion_logica;
                 uint16_t base, tam;
                 getRegister(26, &direccion_logica);
                 getSegmentRange((direccion_logica >> 16), &base, &tam);
-                setRegister(3, base + entryPoint);
+                printf("Entry Point: %04X\n", entryPoint);
+                printf(" IP: %08X\n",(direccion_logica & 0xFFFF0000) | (entryPoint));
+                setRegister( 3, (direccion_logica & 0xFFFF0000) | (entryPoint));
                 
                 for (int i = 0; i < tam; i++) {
                     fread(&opCode, sizeof(uint8_t), 1, fileA);
@@ -293,20 +346,21 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                     }
                 }
 
-                /*
-                if (offsetPosition == 0)
-                    opTable1[0x0B](0xFFFFFFFF);
-                else
-                    opTable1[0x0B](offsetPosition);
-
-                opTable1[0x0B](argc);
-                opTable1[0x0B](0XFFFFFFFF);
-                */
                 // setteamos SP al final de la memoria
                 uint32_t SS;
                 getRegister(29,&SS);
                 getSegmentRange((SS >> 16), &base, &tam);
-                setRegister(7, (base + tam));
+                printf("\n\nbase SS: %04X | tam SS: %04X\n\n", base, tam);
+                setRegister(7, (SS & 0xFFFF0000) |(tam));
+
+                if (gotParams == 0)
+                    opTable1[0x0B](0x0200FFFF);
+                else
+                    opTable1[0x0B](0x0200FFFF & offsetPosition);
+
+                opTable1[0x0B](0x02000000 | argc);
+                opTable1[0x0B](0x0200FFFF);
+                
             }
     } else
         if (fileB != NULL){ // Solo hay imagen
@@ -342,6 +396,7 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
         printf("          STARTING EXECUTION             \n");
         printf("==========================================\n");
     }
+
     beginExecution(fileB, debug);
 }
 
@@ -372,7 +427,7 @@ int main(int argc, char* argv[]) {
     char **lista = NULL;
     uint32_t *offsets = NULL;
     int j = 0;
-    uint32_t offsetAcum = 0, offsetPostion =0xFFFFFFFF;
+    uint32_t offsetAcum = 0;
 
     // Parseo de argumentos
     while (i < argc) {
@@ -483,22 +538,6 @@ int main(int argc, char* argv[]) {
             }
         }
         argcPos = direccion_fisica;
-        /*
-        memory.data[memorySize - 3] = (argcPos >> 24) & 0xFF;
-        memory.data[memorySize - 2] = (argcPos >> 16) & 0xFF;
-        memory.data[memorySize - 1] = (argcPos >> 8) & 0xFF;
-        memory.data[memorySize - 0] = argcPos & 0xFF;
-
-        memory.data[memorySize - 7] = (j >> 24) & 0xFF;
-        memory.data[memorySize - 6] = (j >> 16) & 0xFF;
-        memory.data[memorySize - 5] = (j >> 8) & 0xFF;
-        memory.data[memorySize - 4] = j & 0xFF;
-
-        memory.data[memorySize - 11] = 0xFF;
-        memory.data[memorySize - 10] = 0xFF;
-        memory.data[memorySize - 9] = 0xFF;
-        memory.data[memorySize - 8] = 0xFF;
-        */
         setRegister(31,0x00000000);
 
         // Escribir los offsets en memoria
@@ -518,23 +557,7 @@ int main(int argc, char* argv[]) {
         setSegmentDataLength(direccion_fisica);
         free(lista);
         free(offsets);
-    } else{/*
-        if (gotParams == 0){
-            memory.data[memorySize - 3] = 0xFF;
-            memory.data[memorySize - 2] = 0xFF;
-            memory.data[memorySize - 1] = 0xFF;
-            memory.data[memorySize - 0] = 0xFF;
-
-            memory.data[memorySize - 7] = 0x0;
-            memory.data[memorySize - 6] = 0x0;
-            memory.data[memorySize - 5] = 0x0;
-            memory.data[memorySize - 4] = 0x0;
-
-            memory.data[memorySize - 11] = 0xFF;
-            memory.data[memorySize - 10] = 0xFF;
-            memory.data[memorySize - 9] = 0xFF;
-            memory.data[memorySize - 8] = 0xFF;
-        }*/
+    } else{
         setRegister(31,0xFFFFFFFF);
     }
 

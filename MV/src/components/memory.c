@@ -54,7 +54,7 @@ int writeByte(int address, uint8_t value) {
         return 0;
     }
     
-    if (address < 0 || address >= memory.size) {
+    if (address < 0 || address > memory.size) {
         printf("Error: Address %d out of range (0-%d)\n", address, memory.size - 1);
         return 0;
     }
@@ -163,14 +163,12 @@ void writeMemory (uint32_t op) {
 void writeStack(uint32_t SP) {
 
     uint32_t logicalAddress, physicalAddress, mbr;
-
     SP -= 4;
     memoryAccess((SP >> 16), (SP & 0xFFFF), &logicalAddress, &physicalAddress, 0x0);
     getRegister(2, &mbr);
-
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++){
         writeByte( (physicalAddress + i), (uint8_t) (mbr >> ((3 - i) * 8)) );    // Escritura big-endian
-    
+    }
     setRegister(7,SP);
 }
 

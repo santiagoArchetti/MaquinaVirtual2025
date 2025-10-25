@@ -391,8 +391,6 @@ void op_push(uint32_t op1) {
 
     getRegister(7,&SP);
     getRegister(29,&SS);
-    
-    
     if ((SP - 4)  < SS){ // si el valor es menor, es stack overflow
         printf("ERROR: STACK OVERFLOW\n");
         setRegister(3,0xFFFFFFFF);
