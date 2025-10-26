@@ -131,7 +131,6 @@ if (opTable[opcode] != NULL) {
     // man
  */
 
- 
 /* -------- Otra posible version -----------------
 void analizeInstruction(uint8_t instruction, uint8_t *op1Bytes, uint8_t *op2Bytes) {
     uint8_t opCode;

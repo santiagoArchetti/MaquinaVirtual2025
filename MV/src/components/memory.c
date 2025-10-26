@@ -56,6 +56,7 @@ int writeByte(int address, uint8_t value) {
     
     if (address < 0 || address > memory.size) {
         printf("Error: Address %d out of range (0-%d)\n", address, memory.size - 1);
+        setRegister(3,0xFFFFFFFF);
         return 0;
     }
     memory.data[address] = value;
@@ -71,6 +72,7 @@ int readByte(int address, uint8_t* value) {
     
     if (address < 0 || address >= memory.size) {
         printf("Error: Address %d out of range (0-%d)\n", address, memory.size - 1);
+        setRegister(3,0xFFFFFFFF);
         return 0;
     }    
     *value = memory.data[address];

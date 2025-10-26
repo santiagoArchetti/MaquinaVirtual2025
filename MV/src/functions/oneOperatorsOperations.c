@@ -293,7 +293,8 @@ void sys_breakpoint(FILE *arch){
     switch (stop) {
         case 'q': setRegister(3,0xFFFFFFFF); break;
         case 'g': flag = 0; break;
-        case '\0': flag = 1; break;
+        case '\n': 
+        case '\r': flag = 1; break;
         default: {
             printf("ERROR: el caracter (%c) ingresado es invalido",stop);
             setRegister(3,0xFFFFFFFF);
@@ -357,6 +358,7 @@ void op_jnn(uint32_t op1) {
         setRegister(3, op1 & 0x00FFFFFF);  // Saltar
     }
 }
+
 /* ----------------------------------------------------- */
 void op_not(uint32_t op1) {
 

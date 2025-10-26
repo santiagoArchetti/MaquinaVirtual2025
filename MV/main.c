@@ -36,7 +36,7 @@ void beginExecution(FILE *filei, int debug) {
 
             // Debug: mostrar informacion de la instruccion
             if (debug) {
-                printf("[%04X] %02X", IP, opCode);
+                printf("[%04X] %02X", fisicalAddress, opCode);
                 fflush(stdout);
             }
             
@@ -51,6 +51,7 @@ void beginExecution(FILE *filei, int debug) {
                 uint32_t operandA = 0, operandB = 0;
 
                 if (op2Bytes > 0) {
+
                     uint8_t bytes2[3] = {0};
                     int i = 0;
 
@@ -77,24 +78,24 @@ void beginExecution(FILE *filei, int debug) {
                     }
                     operandB = ( (uint32_t) op2Bytes << 24 ) | operandB;   // Asignacion del codigo de operado
                     setRegister(6, operandB);
-                }  
+                }
 
                 if (op1Bytes > 0) {
+
                     uint8_t bytes1[3] = {0};
                     int ii = 0;
-                    uint8_t TOPE_IP1 = IP + op1Bytes;
-
+                    uint32_t TOPE_IP1 = IP + op1Bytes;
                     while (IP < TOPE_IP1) {
-                    logicalAddress = getLogicalAddress(csValue, IP);
-                    fisicalAddress = getFisicalAddress(logicalAddress);
-                    readByte(fisicalAddress, &Value); //trae el dato del mbr
-                    opCode = (uint8_t)(Value & 0xFF);
-                    bytes1[ii] = opCode;
-                    if (debug) {
-                        printf(" %02X", opCode);
-                    }
-                    ii++;
-                    IP = IP + 1;
+                        logicalAddress = getLogicalAddress(csValue, IP);
+                        fisicalAddress = getFisicalAddress(logicalAddress);
+                        readByte(fisicalAddress, &Value); //trae el dato del mbr
+                        opCode = (uint8_t)(Value & 0xFF);
+                        bytes1[ii] = opCode;
+                        if (debug) {
+                            printf(" %02X", opCode);
+                        }
+                        ii++;
+                        IP = IP + 1;
                     }
                     
                     if (op1Bytes == 1) {
@@ -187,7 +188,7 @@ void beginExecution(FILE *filei, int debug) {
     }
 }
 
-void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t offsetPosition, int argc) {
+void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t offsetPosition, int argc, uint16_t paramSegmentSize) {
     uint8_t opCode;
     char header[5] = {0};
     uint8_t version;
@@ -233,91 +234,91 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
             if (version == 0x02) {
                 uint8_t sizeHigh, sizeLow;
                 uint32_t registerValue;
-                uint32_t vec[5] = {0x0}, taman[5] = {0x0};
-
+                
+                // El header lee en este orden: Code, Data, Extra, Stack, Const
+                uint16_t sizes[6]; // [Code, Data, Extra, Stack, Const, Param]
+                uint16_t physicalOrder[6]; // Orden fisico: Param(?), Const, Code, Data, Extra, Stack
+                
+                // Leer tamaños del header
                 for (int ii = 0; ii < 5; ii++) {
                     fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
                     fread(&sizeLow, sizeof(uint8_t), 1, fileA);
-                    
-                    vec[ii] = (uint32_t) (( ((uint32_t) ii + gotParams) << 16 ) | (0x0));
-                    taman[ii] = (uint32_t) (((uint16_t)sizeHigh << 8) | sizeLow);
-                    /*
-                    if ( ii < 4) {        // gotParams es 1 o 0
-                        vec[ii + 1] = (uint32_t) (( ((uint32_t) ii + gotParams) << 16 ) | (0x0));
-                        taman[ii + 1] = (uint32_t) (((uint16_t)sizeHigh << 8) | sizeLow);
-                    } else {
-                        vec[0] = (uint32_t) (( ((uint32_t) ii + gotParams) << 16 ) | (0x0));
-                        taman[0] = (uint32_t) (((uint16_t)sizeHigh << 8) | sizeLow);
-                    } */
+                    sizes[ii] = ((uint16_t)sizeHigh << 8) | sizeLow; // Code=0, Data=1, Extra=2, Stack=3, Const=4
+                    printf("Segment %d size: %04X\n", ii, sizes[ii]);
                 }
-                int emptySeg = 0;
-                if (taman[0] != 0x0) {
-                    registerValue = (uint32_t) (( ((uint32_t) gotParams) << 16 ) | (0x0));
-                    setSegmentDataLength(taman[0]);
-                }else{
-                    registerValue = 0xFFFFFFFF;
-                    emptySeg++;
-                }
-                setRegister(26,registerValue);
-
-                for (int ii = 1; ii < 5; ii++){
-                    if (taman[ii] != 0x0) {
-                        registerValue = (uint32_t) (( ((uint32_t) ii + gotParams - emptySeg) << 16 ) | (0x0));
-                        setSegmentDataLength(taman[ii]);
-                    }else{
-                        registerValue = 0xFFFFFFFF;
-                        emptySeg++;
-                    }
-                    switch (ii) {
-                            case 0:setRegister(26,registerValue);
-                                    break; 
-                            case 1:setRegister(27,registerValue);
-                                    break;
-                            case 2:setRegister(28,registerValue);
-                                    break;
-                            case 3:setRegister(29,registerValue);
-                                    break;
-                            case 4:setRegister(30,registerValue);
-                                    break;
-                    }
-                    /*
-                    if (gotParams == 1){
-                        switch (ii) {
-                            case 0:setRegister(30,registerValue);
-                                    break; 
-                            case 1:setRegister(26,registerValue);
-                                    break;
-                            case 2:setRegister(27,registerValue);
-                                    break;
-                            case 3:setRegister(28,registerValue);
-                                    break;
-                            case 4:setRegister(29,registerValue);
-                                    break;
+                
+                // Usar el tamaño del Param Segment calculado previamente
+                physicalOrder[0] = paramSegmentSize;
+                
+                // Orden físico: Param(0), Const(4), Code(0), Data(1), Extra(2), Stack(3)
+                physicalOrder[1] = sizes[4]; // Const
+                physicalOrder[2] = sizes[0]; // Code
+                physicalOrder[3] = sizes[1]; // Data
+                physicalOrder[4] = sizes[2]; // Extra
+                physicalOrder[5] = sizes[3]; // Stack
+                
+                // Crear segmentos en orden físico (solo los que tienen tamaño > 0)
+                uint32_t segmentTableIndex = 0;
+                
+                // Primero: marcar todos los registros como inválidos
+                setRegister(30, 0xFFFFFFFF); // KS  
+                setRegister(26, 0xFFFFFFFF); // CS
+                setRegister(27, 0xFFFFFFFF); // DS
+                setRegister(28, 0xFFFFFFFF); // ES
+                setRegister(29, 0xFFFFFFFF); // SS
+                
+                // Segundo: crear segmentos en orden físico y asignar registros
+                for (int i = 0; i < 6; i++) {
+                    if (physicalOrder[i] > 0) {
+                        // Crear segmento en tabla de descriptores primero
+                        setSegmentDataLength(physicalOrder[i]);
+                        
+                        // Mapear índice lógico (i) a registro correcto
+                        uint32_t regNum = 0xFFFFFFFF;
+                        
+                        switch (i) {
+                            case 1: regNum = 30; break; // KS - Const Segment
+                            case 2: regNum = 26; break; // CS - Code Segment
+                            case 3: regNum = 27; break; // DS - Data Segment
+                            case 4: regNum = 28; break; // ES - Extra Segment
+                            case 5: regNum = 29; break; // SS - Stack Segment
                         }
-                    } else {
-                        switch (ii) {
-                            case 1:setRegister(30,registerValue);
-                                    break;
-                            case 2:setRegister(26,registerValue);
-                                    break; 
-                            case 3:setRegister(27,registerValue);
-                                    break;
-                            case 4:setRegister(28,registerValue);
-                                    break;
-                            case 5:setRegister(29,registerValue);
-                                    break;
+                        
+                        if (regNum != 0xFFFFFFFF && i != 0) {
+                            // Asignar registro con índice en la tabla de descriptores
+                            uint32_t regValue = (segmentTableIndex << 16) | 0x0000;
+                            setRegister(regNum, regValue);
                         }
-                    }*/
+                        segmentTableIndex++;
+                    }
                 }
 
-                uint32_t CS,DS,SS1,KS1,ES,PS;
-                getRegister(26,&CS);
-                getRegister(27,&DS);
-                getRegister(28,&ES);
-                getRegister(29,&SS1);
-                getRegister(30,&KS1);
-                getRegister(31,&PS);
-                printf("CS: %08X\nDS: %08X\nES: %08X\nSS: %08X\nKS: %08X\nPS: %08X\n",CS,DS,ES,SS1,KS1,PS);
+                // Mostrar tabla de segmentos y registros
+                /*
+                printf("\n=== TABLA DE SEGMENTOS ===\n");
+                printf("Indice | Segmento | Base  | size\n");
+                printf("-------|----------|-------|--------\n");
+                for (int i = 0; i < segmentTable.position; i++) {
+                    uint16_t base, length;
+                    getSegmentRange(i, &base, &length);
+                    printf("  %2d   |     %2d   | %04X  | %04X\n", i, i, base, length);
+                }*/
+                
+                // Mostrar registros de segmento
+                /* uint32_t CS, DS, ES, SS1, PS1;
+                getRegister(26, &CS);
+                getRegister(27, &DS);
+                getRegister(28, &ES);
+                getRegister(29, &SS1);
+                getRegister(31, &PS1);
+                
+                printf("\n=== REGISTROS DE SEGMENTO ===\n");
+                printf("CS=%08X (indice tabla: %d)\n", CS, CS == 0xFFFFFFFF ? -1 : (CS >> 16));
+                printf("DS=%08X (indice tabla: %d)\n", DS, DS == 0xFFFFFFFF ? -1 : (DS >> 16));
+                printf("ES=%08X (indice tabla: %d)\n", ES, ES == 0xFFFFFFFF ? -1 : (ES >> 16));
+                printf("SS=%08X (indice tabla: %d)\n", SS1, SS1 == 0xFFFFFFFF ? -1 : (SS1 >> 16));
+                printf("PS=%08X\n", PS1);
+                */
 
                 uint32_t entryPoint;
                 fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
@@ -327,15 +328,16 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 uint16_t base, tam;
                 getRegister(26, &direccion_logica);
                 getSegmentRange((direccion_logica >> 16), &base, &tam);
-                printf("Entry Point: %04X\n", entryPoint);
-                printf(" IP: %08X\n",(direccion_logica & 0xFFFF0000) | (entryPoint));
                 setRegister( 3, (direccion_logica & 0xFFFF0000) | (entryPoint));
-                
+                printf("IP: %04X:%04X\n", (direccion_logica >> 16), entryPoint);
+                // Cargar Code Segment
+                /// printf("base: %04X, size: %04X\n", base, tam);
                 for (int i = 0; i < tam; i++) {
                     fread(&opCode, sizeof(uint8_t), 1, fileA);
                     writeByte(base + i, opCode);
                 }
-                
+
+                // Cargar Const Segment (si existe)
                 uint32_t KS;
                 getRegister(30,&KS);
                 if (KS != 0xFFFFFFFF){
@@ -346,21 +348,23 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                     }
                 }
 
-                // setteamos SP al final de la memoria
+                // Setear SP al tope del stack (base + tamaño)
                 uint32_t SS;
                 getRegister(29,&SS);
                 getSegmentRange((SS >> 16), &base, &tam);
-                printf("\n\nbase SS: %04X | tam SS: %04X\n\n", base, tam);
-                setRegister(7, (SS & 0xFFFF0000) |(tam));
+                setRegister(7, (SS & 0xFFFF0000) | (tam));
 
-                if (gotParams == 0)
-                    opTable1[0x0B](0x0200FFFF);
-                else
-                    opTable1[0x0B](0x0200FFFF & offsetPosition);
-
-                opTable1[0x0B](0x02000000 | argc);
-                opTable1[0x0B](0x0200FFFF);
-                
+                // Push de argc y argv si hay parámetros
+                if (gotParams && offsetPosition != 0xFFFFFFFF) {
+                    // Push argv (puntero al array de argumentos en Param Segment)
+                    opTable1[0x0B](0x02000000 | 0x0); // PUSH 0x0000 (offset en Param Segment)
+                    // Push argc
+                    opTable1[0x0B](0x02000000 | argc);
+                } else {
+                    // Sin parámetros: argc=0, argv=0xFFFFFFFF
+                    opTable1[0x0B](0x0200FFFF); // PUSH 0xFFFF (puntero inválido)
+                    opTable1[0x0B](0x02000000); // PUSH 0 (argc = 0)
+                }
             }
     } else
         if (fileB != NULL){ // Solo hay imagen
@@ -450,8 +454,8 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
         }
-        // Opción de memoria -m<numero>
-        else if (len > 2 && argv[i][0] == '-' && argv[i][1] == 'm') {
+        // Opción de memoria m=M
+        else if (len > 2 && argv[i][0] == 'm' && argv[i][1] == '=') {
             char *fin;
             long numero = strtol(&argv[i][2], &fin, 10);
             if (*fin == '\0' && numero > 0) {
@@ -519,14 +523,13 @@ int main(int argc, char* argv[]) {
     }
 
     // Inicializar componentes con tamaño de memoria dinámico
-    setRegister(7,memorySize);
     initMemory(memorySize);
     initRegisters();
     initSegmentTable();
     initOpTable();
 
-    uint32_t direccion_fisica = 0x0;
-    uint32_t argcPos = 0xFFFFFFFF;
+    uint32_t direccion_fisica = 0x0, argcPos = 0xFFFFFFFF, PS = 0x0;
+    uint16_t paramSegmentSize = 0;
 
     if (gotParams && lista != NULL && offsets != NULL) {
 
@@ -538,7 +541,8 @@ int main(int argc, char* argv[]) {
             }
         }
         argcPos = direccion_fisica;
-        setRegister(31,0x00000000);
+        PS |= direccion_fisica;
+        setRegister(31, PS);
 
         // Escribir los offsets en memoria
         for (int idx = 0; idx < j; idx++) {
@@ -548,20 +552,20 @@ int main(int argc, char* argv[]) {
                 direccion_fisica++;
             }
         }
-        
+
+        // Guardar tamaño del Param Segment
+        paramSegmentSize = direccion_fisica;
+
         // Liberar memoria de parámetros
         for (int k = 0; k < j; k++) {
             free(lista[k]);
         }
 
-        setSegmentDataLength(direccion_fisica);
         free(lista);
         free(offsets);
-    } else{
-        setRegister(31,0xFFFFFFFF);
     }
 
-    analizeHeader(fileA, fileB, debug, gotParams, argcPos, j);
+    analizeHeader(fileA, fileB, debug, gotParams, argcPos, j, paramSegmentSize);
      
     // Liberar recursos
     if (fileA) {
