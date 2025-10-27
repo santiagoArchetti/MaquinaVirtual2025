@@ -288,6 +288,11 @@ void sys_clear_screen(){
 }
 
 void sys_breakpoint(FILE *arch){
+    
+    if (arch == NULL)
+        arch = fopen("imagen.vmi", "wb");
+    setImage(arch);
+    
     char stop;
     scanf("%c", &stop);
     switch (stop) {
@@ -300,9 +305,6 @@ void sys_breakpoint(FILE *arch){
             setRegister(3,0xFFFFFFFF);
         }
     }
-    if (arch == NULL)
-        arch = fopen("imagen.vmi", "wb");
-    setImage(arch);
 }
 
 /* --------------------- JUMPS ------------------------ */

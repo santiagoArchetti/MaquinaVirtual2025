@@ -316,7 +316,7 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 printf("SS=%08X (indice tabla: %d)\n", SS1, SS1 == 0xFFFFFFFF ? -1 : (SS1 >> 16));
                 printf("KS=%08X (indice tabla: %d)\n", KS1, KS1 == 0xFFFFFFFF ? -1 : (KS1 >> 16));
                 printf("PS=%08X\n", PS1);
-*/
+                */
                 uint32_t entryPoint;
                 fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
                 fread(&sizeLow, sizeof(uint8_t), 1, fileA);
@@ -431,7 +431,7 @@ int main(int argc, char* argv[]) {
     uint32_t *offsets = NULL;
     int j = 0;
     uint32_t offsetAcum = 0;
-
+    printf(" UNO \n");
     // Parseo de argumentos
     while (i < argc) {
         len = strlen(argv[i]);
@@ -446,8 +446,8 @@ int main(int argc, char* argv[]) {
             gotVmx = 1;
         }
         // Buscar archivo .i (input)
-        else if (len > 2 && strcmp(&argv[i][len-2], ".i") == 0) {
-            fileB = fopen(argv[i], "rb");
+        else if (len > 4 && strcmp(&argv[i][len-4], ".vmi") == 0) {
+            fileB = fopen(argv[i], "r+b");
             if (!fileB) {
                 printf("Error: Cannot open file '%s'\n", argv[i]);
                 return 1;
@@ -516,7 +516,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Verificar que se haya especificado un archivo VMX
-    if (!fileA) {
+    if (!fileA && !fileB) {
         printf("Error: No VMX file specified\n");
         return 1;
     }
@@ -567,12 +567,10 @@ int main(int argc, char* argv[]) {
     analizeHeader(fileA, fileB, debug, gotParams, argcPos, j, paramSegmentSize);
      
     // Liberar recursos
-    if (fileA) {
+    if (fileA)
         fclose(fileA);
-    }
-    if (fileB) {
+    if (fileB)
         fclose(fileB);
-    }
     
     // Liberar memoria dinámica
     freeMemory();
