@@ -258,21 +258,39 @@ void sys_string_read(){
 
 void sys_string_write(){
 
-    uint32_t edx;
+    uint32_t edx,KS;
     getRegister(13,&edx);
+    getRegister(30,&KS);
     uint32_t direccion_actual = edx;    // probablemente no necesario
     uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
     
-    char car;
+    char car = ' ';
     if (isValidAddress(direccion_fisica, 1, (uint16_t)(edx >> 16) )){
-        int i = 0;
-        while (car != '\0') {
-            readByte((direccion_fisica + i), &car);
+        int i = 0, j = 0;
+        printf("[%04X] ", direccion_fisica);
+        if ((edx & 0xFFFF0000) == (KS & 0xFFFF0000)){
+            while ((j < 6) && (car != '\0')){
+                readByte((direccion_fisica + j), &car);
+                printf("%02X",car);
+                printf(" ");
+                j++;
+            }
+            readByte((direccion_fisica + 7), &car); // leo el nulo
+            if ((car != '\0'))
+                printf("...");
+            else
+                printf("%02X",car);
+        }
+        printf(" | \"");
+        readByte((direccion_fisica + i), &car);
+        while ((car != '\0') && (car != '\n') && (car != '\r')) {
             printf("%c",car);
             i++;
             memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
             setRegister(2, car);
+            readByte((direccion_fisica + i), &car);
         }
+        printf("\"\n");
     } else {
         printf("ERROR: direccion fisica invalida");
         setRegister(3,0xFFFFFFFF);

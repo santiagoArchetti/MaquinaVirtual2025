@@ -109,7 +109,7 @@ void beginExecution(FILE *filei, int debug) {
                     int totalBytesShown = 1 + op1Bytes + op2Bytes; // opcode + operandos
                     
                     // Calcular padding para alinear mnemonicos (maximo 8 bytes = 24 chars)
-                    int paddingNeeded = 25 - (totalBytesShown * 3); // 3 chars por byte
+                    int paddingNeeded = 23 - (totalBytesShown * 3); // 3 chars por byte
                     if (paddingNeeded < 0) paddingNeeded = 0;
                     
                     // Agregar padding
@@ -404,6 +404,7 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
 }
 
 int main(int argc, char* argv[]) {
+
     if (argc < 2) {
         printf("==========================================\n");
         printf("              VMX25 EMULATOR MACHINE              \n");
