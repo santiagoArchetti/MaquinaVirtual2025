@@ -35,6 +35,7 @@ void setImage(FILE *arch){
         readByte(p,&mem);
         fwrite(&mem, sizeof(uint8_t), 1, arch);
     }
+    
 }
 
 void op_sys(uint32_t op1, FILE *arch) {
@@ -291,6 +292,7 @@ void sys_breakpoint(FILE *arch){
     
     if (arch == NULL)
         arch = fopen("imagen.vmi", "wb");
+    fseek(arch, 0, 0);
     setImage(arch);
     
     char stop;

@@ -431,7 +431,6 @@ int main(int argc, char* argv[]) {
     uint32_t *offsets = NULL;
     int j = 0;
     uint32_t offsetAcum = 0;
-    printf(" UNO \n");
     // Parseo de argumentos
     while (i < argc) {
         len = strlen(argv[i]);
@@ -447,10 +446,13 @@ int main(int argc, char* argv[]) {
         }
         // Buscar archivo .i (input)
         else if (len > 4 && strcmp(&argv[i][len-4], ".vmi") == 0) {
-            fileB = fopen(argv[i], "r+b");
-            if (!fileB) {
-                printf("Error: Cannot open file '%s'\n", argv[i]);
-                return 1;
+            if (fileA == NULL) {
+                // Abrir en modo lectura/escritura binaria, creándolo si no existe
+                fileB = fopen(argv[i], "r+b");
+                if (!fileB)
+                    fileB = fopen(argv[i], "w+b");
+            } else {
+                fileB = fopen(argv[i], "wb");
             }
         }
         // Opción de memoria m=M
