@@ -20,9 +20,7 @@ void beginExecution(FILE *filei, int debug) {
     uint8_t opCode;
 
     while ((baseCodeSegment + (IP & 0xFFFF) < baseCodeSegment + codeSegmentValueLength) && (baseCodeSegment + (IP & 0xFFFF) >= baseCodeSegment)) {
-        logicalAddress = getLogicalAddress(csValue >> 16, IP & 0xFFFF);
-        fisicalAddress = getFisicalAddress(logicalAddress);
-        
+        fisicalAddress = getFisicalAddress(IP);
         // Guardar IP antes de ejecutar la operación
         uint32_t IPBeforeExecution = IP;
         
@@ -55,15 +53,13 @@ void beginExecution(FILE *filei, int debug) {
                     uint8_t bytes2[3] = {0};
                     int i = 0;
 
-                    uint8_t TOPE_IP = IP + op2Bytes;
+                    uint32_t TOPE_IP = IP + op2Bytes;
                     while (IP < TOPE_IP) {
-                    logicalAddress = getLogicalAddress(csValue, IP);
-                    fisicalAddress = getFisicalAddress(logicalAddress);
+                    fisicalAddress = getFisicalAddress(IP);
                     readByte(fisicalAddress, &Value); //trae el dato del mbr
-                    opCode = (uint8_t)(Value & 0xFF);
-                    bytes2[i] = opCode;
+                    bytes2[i] = Value;
                     if (debug) {
-                        printf(" %02X", opCode);
+                        printf(" %02X", Value);
                     }
                     i++;
                     IP += 1;
@@ -86,13 +82,11 @@ void beginExecution(FILE *filei, int debug) {
                     int ii = 0;
                     uint32_t TOPE_IP1 = IP + op1Bytes;
                     while (IP < TOPE_IP1) {
-                        logicalAddress = getLogicalAddress(csValue, IP);
-                        fisicalAddress = getFisicalAddress(logicalAddress);
+                        fisicalAddress = getFisicalAddress(IP);
                         readByte(fisicalAddress, &Value); //trae el dato del mbr
-                        opCode = (uint8_t)(Value & 0xFF);
-                        bytes1[ii] = opCode;
+                        bytes1[ii] = Value;
                         if (debug) {
-                            printf(" %02X", opCode);
+                            printf(" %02X", Value);
                         }
                         ii++;
                         IP = IP + 1;
@@ -150,6 +144,7 @@ void beginExecution(FILE *filei, int debug) {
                 } else{
                   opTable0[cleanOpCode]();
                 }
+
                 if (flag){
                     //opTable1[0x00](0xFF);
                     sys_breakpoint(filei);
@@ -294,7 +289,7 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 }
 
                 // Mostrar tabla de segmentos y registros
-                /*
+                 
                 printf("\n=== TABLA DE SEGMENTOS ===\n");
                 printf("Indice | Segmento | Base  | size\n");
                 printf("-------|----------|-------|--------\n");
@@ -302,14 +297,16 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                     uint16_t base, length;
                     getSegmentRange(i, &base, &length);
                     printf("  %2d   |     %2d   | %04X  | %04X\n", i, i, base, length);
-                }*/
+                }
                 
                 // Mostrar registros de segmento
-                /* uint32_t CS, DS, ES, SS1, PS1;
+                /*
+                uint32_t CS, DS, ES, SS1, KS1, PS1;
                 getRegister(26, &CS);
                 getRegister(27, &DS);
                 getRegister(28, &ES);
                 getRegister(29, &SS1);
+                getRegister(30, &KS1);
                 getRegister(31, &PS1);
                 
                 printf("\n=== REGISTROS DE SEGMENTO ===\n");
@@ -317,19 +314,20 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 printf("DS=%08X (indice tabla: %d)\n", DS, DS == 0xFFFFFFFF ? -1 : (DS >> 16));
                 printf("ES=%08X (indice tabla: %d)\n", ES, ES == 0xFFFFFFFF ? -1 : (ES >> 16));
                 printf("SS=%08X (indice tabla: %d)\n", SS1, SS1 == 0xFFFFFFFF ? -1 : (SS1 >> 16));
+                printf("KS=%08X (indice tabla: %d)\n", KS1, KS1 == 0xFFFFFFFF ? -1 : (KS1 >> 16));
                 printf("PS=%08X\n", PS1);
-                */
-
+*/
                 uint32_t entryPoint;
                 fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
                 fread(&sizeLow, sizeof(uint8_t), 1, fileA);
                 entryPoint = ((uint16_t)sizeHigh << 8) | sizeLow;  // Big-endian
+                
                 uint32_t direccion_logica;
                 uint16_t base, tam;
                 getRegister(26, &direccion_logica);
                 getSegmentRange((direccion_logica >> 16), &base, &tam);
                 setRegister( 3, (direccion_logica & 0xFFFF0000) | (entryPoint));
-                printf("IP: %04X:%04X\n", (direccion_logica >> 16), entryPoint);
+
                 // Cargar Code Segment
                 /// printf("base: %04X, size: %04X\n", base, tam);
                 for (int i = 0; i < tam; i++) {
@@ -357,7 +355,7 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 // Push de argc y argv si hay parámetros
                 if (gotParams && offsetPosition != 0xFFFFFFFF) {
                     // Push argv (puntero al array de argumentos en Param Segment)
-                    opTable1[0x0B](0x02000000 | 0x0); // PUSH 0x0000 (offset en Param Segment)
+                    opTable1[0x0B](0x02000000 | (offsetPosition & 0x00FFFFFF)); // PUSH 0x0000 (offset en Param Segment)
                     // Push argc
                     opTable1[0x0B](0x02000000 | argc);
                 } else {
@@ -365,6 +363,7 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                     opTable1[0x0B](0x0200FFFF); // PUSH 0xFFFF (puntero inválido)
                     opTable1[0x0B](0x02000000); // PUSH 0 (argc = 0)
                 }
+                opTable1[0x0B](0x0200FFFF); // PUSH -1 (ret)
             }
     } else
         if (fileB != NULL){ // Solo hay imagen

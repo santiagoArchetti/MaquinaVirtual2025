@@ -81,14 +81,19 @@ int readByte(int address, uint8_t* value) {
 
 //Seteo del MAR y LAR 
 void memoryAccess(uint32_t SegmentValue, uint32_t OffsetValue, uint32_t *logicalAddress, uint32_t *physicalAddress, uint32_t aux) {
-    *logicalAddress = getLogicalAddress(SegmentValue, OffsetValue);
-    setRegister(0, *logicalAddress);  //escribimos el LAR
-    *physicalAddress = getFisicalAddress(*logicalAddress);
-    
-    // uint32_t marValue = (aux << 16) | (*physicalAddress & 0xFFFF);
-    uint32_t marValue = 4 - aux;
-    marValue = (marValue << 16) | (*physicalAddress & 0xFFFF);
-    setRegister(1, marValue);  //escribimos el MAR con cantidad y direccion fisica
+    if (SegmentValue >= 0 && SegmentValue <= 0x8){
+        *logicalAddress = getLogicalAddress(SegmentValue, OffsetValue);
+        setRegister(0, *logicalAddress);  //escribimos el LAR
+        *physicalAddress = getFisicalAddress(*logicalAddress);
+        
+        // uint32_t marValue = (aux << 16) | (*physicalAddress & 0xFFFF);
+        uint32_t marValue = 4 - aux;
+        marValue = (marValue << 16) | (*physicalAddress & 0xFFFF);
+        setRegister(1, marValue);  //escribimos el MAR con cantidad y direccion fisica
+    } else {
+        printf("Error: Segmento invalido\n");
+        setRegister(3,0xFFFFFFFF);
+    }
 }
 
 /*------------------- Funciones auxiliares -----------------*/
@@ -107,11 +112,10 @@ void readMemory (uint32_t op) {
     uint8_t data;
     uint32_t mbrValue = 0x0;  // Inicializar mbrValue
     uint32_t aux = ((op >> 22) & 0x3); // sirve para saber si es 'l' (0), 'w' (2) o 'b' (3)
-    memoryAccess(segmentRegister, offset, &logicalAddress, &physicalAddress, aux); //setea configuracion de memoria para lectura
-    
+    memoryAccess((uint32_t)segmentRegister, (uint32_t)offset, &logicalAddress, &physicalAddress, aux); //setea configuracion de memoria para lectura
+
     uint32_t marValue;
     getRegister(1, &marValue);
-    // int bytesToRead = 4 - ((marValue >> 16) & 0xFF);
     int bytesToRead = marValue >> 16;
 
     // Lectura de bytes de memoria (big-endian)
@@ -121,6 +125,7 @@ void readMemory (uint32_t op) {
             mbrValue = (mbrValue << 8) | data;
         }
     } else {
+        printf("Error: Direccion invalida\n");
         setRegister(3,0xFFFFFFFF);
         return;
     }

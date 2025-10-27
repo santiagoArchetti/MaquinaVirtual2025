@@ -18,22 +18,21 @@ void op_mov(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){                                // Inmediato en el primer operando
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
         uint8_t sizeOp2 = op2 >> 24;        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){            // De registro a registro
 
             uint32_t value;
-            getRegister(reg2,&value);
-            setRegister(reg1,value);
+            getRegister((op2 & 0xFF),&value);
+            setRegister((op1 & 0xFF),value);
 
         } else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             
             uint32_t a = op2 & 0xFFFF;
             if ( (op2 & 0x8000) != 0)
                 a |= 0xFFFF0000;
-            setRegister(reg1,a);
+            setRegister((op1 & 0xFF),a);
 
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             mbrValue = op2 & 0xFFFF;
@@ -44,7 +43,7 @@ void op_mov(uint32_t op1, uint32_t op2) {
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
 
             uint32_t value;
-            getRegister(reg2, &value);
+            getRegister((op2 & 0xFF), &value);
             setRegister(2, value);
             writeMemory(op1);
 
@@ -55,7 +54,7 @@ void op_mov(uint32_t op1, uint32_t op2) {
             if ( sizeOp1 == 3 ){     // De Memoria a memoria
                 writeMemory(op1);
             } else if ( sizeOp1 == 1 ){     // De memoria a registro
-                setRegister(reg1,mbrValue);
+                setRegister(op1 & 0xFF,mbrValue);
             }
         }
     }
@@ -68,30 +67,27 @@ void op_add(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){            // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
-            setRegister(reg1, a + b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            setRegister((op1 & 0xFF), a + b);
     
-        } else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
-            b = op2 & 0xFFFF;         // Para generalizar setCondicion
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
-            setRegister(reg1, a + b);
+        }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
+            getRegister((op1 & 0xFF), &a);
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);         // Sign-extend inmediato
+            setRegister((op1 & 0xFF), a + b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            b = op2 & 0xFFFF;       // La mascara es para sacarle el codigo de operando
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
             setRegister(2, a + b);
             writeMemory(op1);
     
@@ -99,7 +95,7 @@ void op_add(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, a + b);
             writeMemory(op1);
 
@@ -117,8 +113,8 @@ void op_add(uint32_t op1, uint32_t op2) {
             readMemory(op2);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg1, &b);
-            setRegister(reg1, a + b);
+            getRegister((op1 & 0xFF), &b);
+            setRegister((op1 & 0xFF), a + b);
         }
         setCondicion(a + b);
     }
@@ -131,30 +127,27 @@ void op_sub(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
-            setRegister(reg1, a - b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            setRegister((op1 & 0xFF), a - b);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
-            b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
-            setRegister(reg1, a - b);
+            getRegister((op1 & 0xFF), &a);
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
+            setRegister((op1 & 0xFF), a - b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            b = op2 & 0xFFFF;
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
             setRegister(2, a - b);
             writeMemory(op1);
     
@@ -162,7 +155,7 @@ void op_sub(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, a - b);
             writeMemory(op1);
 
@@ -177,11 +170,11 @@ void op_sub(uint32_t op1, uint32_t op2) {
             writeMemory(op1);
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
-            setRegister(reg1,  a - b);
+            setRegister((op1 & 0xFF),  a - b);
         }
         setCondicion(a - b);
     }
@@ -194,30 +187,27 @@ void op_mul(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
-            setRegister(reg1, b * a);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            setRegister((op1 & 0xFF), b * a);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
-            b = op2 & 0xFFFF;        // Para generalizar setCondicion            
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
-            setRegister(reg1, b * a);
+            getRegister((op1 & 0xFF), &a);
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
+            setRegister((op1 & 0xFF), b * a);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            b = op2 & 0xFFFF;
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
             setRegister(2, b * a);
             getRegister(2, &mbrValue);
             writeMemory(op1);
@@ -226,7 +216,7 @@ void op_mul(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, b * a);
             writeMemory(op1);
 
@@ -241,11 +231,11 @@ void op_mul(uint32_t op1, uint32_t op2) {
             writeMemory(op1);
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
-            setRegister(reg1,  b * a);
+            setRegister((op1 & 0xFF),  b * a);
         }
         setCondicion(b * a);
     }
@@ -258,25 +248,24 @@ void op_div(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
             if (b != 0)
-                setRegister(reg1, a / b);
+                setRegister((op1 & 0xFF), a / b);
             else
                 setRegister(3,0xFFFFFFFF);
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
-            b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
+            getRegister((op1 & 0xFF), &a);
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
             if (b != 0)
-                setRegister(reg1, a / b);
+                setRegister((op1 & 0xFF), a / b);
             else
                 setRegister(3,0xFFFFFFFF);
         
@@ -284,9 +273,7 @@ void op_div(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            b = op2 & 0xFFFF;
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
 
             if (b != 0) {
                 setRegister(2, a / b);
@@ -297,7 +284,7 @@ void op_div(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             if (b != 0) {
                 setRegister(2, a / b);
                 writeMemory(op1);
@@ -317,12 +304,12 @@ void op_div(uint32_t op1, uint32_t op2) {
                 setRegister(3,0xFFFFFFFF);
 
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registro
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
             if (b != 0)
-                setRegister(reg1,  a / b);
+                setRegister((op1 & 0xFF),  a / b);
             else
                 setRegister(3,0xFFFFFFFF);
         }
@@ -341,34 +328,31 @@ void op_cmp(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            printf("a: %08X b: %08X\n", a, b);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
-            b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
+            getRegister((op1 & 0xFF), &a);
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            b = op2 & 0xFFFF;
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
 
         } else if ( sizeOp1 == 3 && sizeOp2 == 3 ){     // Memoria a memoria
             readMemory(op1);
@@ -379,7 +363,7 @@ void op_cmp(uint32_t op1, uint32_t op2) {
             b = mbrValue;
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registro
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
@@ -395,20 +379,21 @@ void op_shl(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         uint32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
-            setRegister(reg1, a << b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            setRegister((op1 & 0xFF), a << b);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            setRegister(reg1, a << b);
+            setRegister((op1 & 0xFF), a << b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
@@ -422,7 +407,7 @@ void op_shl(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, a << b);
             writeMemory(op1);
 
@@ -437,11 +422,11 @@ void op_shl(uint32_t op1, uint32_t op2) {
             writeMemory(op1);
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
-            setRegister(reg1, a << b);
+            setRegister((op1 & 0xFF), a << b);
         }
         setCondicion(a << b);
     }
@@ -454,20 +439,21 @@ void op_shr(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         uint32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
-            setRegister(reg1, a >> b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            setRegister((op1 & 0xFF), a >> b);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            setRegister(reg1, a >> b);
+            setRegister((op1 & 0xFF), a >> b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
@@ -481,7 +467,7 @@ void op_shr(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, a >> b);
             writeMemory(op1);
 
@@ -496,11 +482,11 @@ void op_shr(uint32_t op1, uint32_t op2) {
             writeMemory(op1);
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registro
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
-            setRegister(reg1, a >> b);
+            setRegister((op1 & 0xFF), a >> b);
         }
         setCondicion(a >> b);
     }
@@ -513,20 +499,21 @@ void op_sar(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
-            setRegister(reg1, a >> b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            setRegister((op1 & 0xFF), a >> b);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            setRegister(reg1, a >> b);
+            setRegister((op1 & 0xFF), a >> b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
@@ -540,7 +527,7 @@ void op_sar(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, a >> b);
             writeMemory(op1);
 
@@ -555,11 +542,11 @@ void op_sar(uint32_t op1, uint32_t op2) {
             writeMemory(op1);
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
-            setRegister(reg1, a >> b);
+            setRegister((op1 & 0xFF), a >> b);
         }
         setCondicion(a >> b);
     }
@@ -572,20 +559,21 @@ void op_and(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
-            setRegister(reg1, a & b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            setRegister((op1 & 0xFF), a & b);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            setRegister(reg1, a & b);
+            setRegister((op1 & 0xFF), a & b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
@@ -599,7 +587,7 @@ void op_and(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, a & b);
             writeMemory(op1);
 
@@ -613,11 +601,11 @@ void op_and(uint32_t op1, uint32_t op2) {
             setRegister(2, a & b);
             writeMemory(op1);
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registro
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
-            setRegister(reg1, a & b);
+            setRegister((op1 & 0xFF), a & b);
         }
         setCondicion(a & b);
     }
@@ -630,20 +618,21 @@ void op_or(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
-            setRegister(reg1, a | b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            setRegister((op1 & 0xFF), a | b);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            setRegister(reg1, a | b);
+            setRegister((op1 & 0xFF), a | b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
@@ -657,7 +646,7 @@ void op_or(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, a | b);
             writeMemory(op1);
 
@@ -672,11 +661,11 @@ void op_or(uint32_t op1, uint32_t op2) {
             writeMemory(op1);
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
-            setRegister(reg1, a | b);
+            setRegister((op1 & 0xFF), a | b);
         }
         setCondicion(a | b);
     }
@@ -689,20 +678,21 @@ void op_xor(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
-            setRegister(reg1, a ^ b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            setRegister((op1 & 0xFF), a ^ b);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            setRegister(reg1, a ^ b);
+            setRegister((op1 & 0xFF), a ^ b);
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
@@ -716,7 +706,7 @@ void op_xor(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, a ^ b);
             writeMemory(op1);
 
@@ -731,11 +721,11 @@ void op_xor(uint32_t op1, uint32_t op2) {
             writeMemory(op1);
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
-            setRegister(reg1, a ^ b);
+            setRegister((op1 & 0xFF), a ^ b);
         }
         setCondicion(a ^ b);
     }
@@ -749,24 +739,25 @@ void op_swap(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 || sizeOp2 == 2){ // Porque no se puede intercambiar con un valor inmediato
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
-            setRegister(reg1, b);
-            setRegister(reg2, a);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
+            setRegister((op1 & 0xFF), b);
+            setRegister((op2 & 0xFF), a);
 
         } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, b);
             writeMemory(op1);
-            setRegister(reg2,a);
+            setRegister((op2 & 0xFF),a);
 
         } else if ( sizeOp1 == 3 && sizeOp2 == 3 ){     // Memoria a memoria
             readMemory(op1);
@@ -780,13 +771,13 @@ void op_swap(uint32_t op1, uint32_t op2) {
             setRegister(2, a);
             writeMemory(op2);
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
             setRegister(2, a);
             writeMemory(op1);
-            setRegister(reg1,b);
+            setRegister((op1 & 0xFF),b);
         }
     }
 }
@@ -798,32 +789,29 @@ void op_ldl(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
             
             // Mantiene lo que estaba en la parte alta y cambia la parte baja
-            setRegister(reg1, (a & 0xFFFF0000) | (b & 0x0000FFFF));
+            setRegister((op1 & 0xFF), (a & 0xFFFF0000) | (b & 0x0000FFFF));
             
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
-            b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
-            setRegister(reg1, (a & 0xFFFF0000) | (b & 0x0000FFFF));
+            getRegister((op1 & 0xFF), &a);
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
+            setRegister((op1 & 0xFF), (a & 0xFFFF0000) | (b & 0x0000FFFF));
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            b = op2 & 0xFFFF;
-            if ( (b & 0x8000) != 0)
-                mbrValue |= 0xFFFF0000;
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
             setRegister(2, (a & 0xFFFF0000) | (b & 0x0000FFFF));
             writeMemory(op1);
 
@@ -831,7 +819,7 @@ void op_ldl(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, (a & 0xFFFF0000) | (b & 0x0000FFFF));
             writeMemory(op1);
 
@@ -845,11 +833,11 @@ void op_ldl(uint32_t op1, uint32_t op2) {
             setRegister(2, (a & 0xFFFF0000) | (b & 0x0000FFFF));
             writeMemory(op1);
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
-            setRegister(reg1, (a & 0xFFFF0000) | (b & 0x0000FFFF));
+            setRegister((op1 & 0xFF), (a & 0xFFFF0000) | (b & 0x0000FFFF));
         }
     }
 }
@@ -861,22 +849,23 @@ void op_ldh(uint32_t op1, uint32_t op2) {
 
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
+        return;
     } else {
         uint8_t sizeOp2 = op2 >> 24;
         int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
+        
+        
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg1, &a);
-            getRegister(reg2, &b);
+            getRegister((op1 & 0xFF), &a);
+            getRegister((op2 & 0xFF), &b);
             
             // Mantenemos lo que estaba en la parte baja y cambiamos la parte alta
-            setRegister(reg1, (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));    
+            setRegister((op1 & 0xFF), (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));    
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
-            getRegister(reg1, &a);
-            b = op2 & 0xFFFF;        // Para generalizar setCondicion
-            setRegister(reg1, (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));
+            getRegister((op1 & 0xFF), &a);
+            b = (int32_t)(int16_t)(op2 & 0xFFFF);
+            setRegister((op1 & 0xFF), (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));
     
         } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
             readMemory(op1);
@@ -890,7 +879,7 @@ void op_ldh(uint32_t op1, uint32_t op2) {
             readMemory(op1);
             getRegister(2, &mbrValue);
             a = mbrValue;
-            getRegister(reg2, &b);
+            getRegister((op2 & 0xFF), &b);
             setRegister(2, (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));
             writeMemory(op1);
 
@@ -905,62 +894,76 @@ void op_ldh(uint32_t op1, uint32_t op2) {
             writeMemory(op1);
             
         } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
-            getRegister(reg1, &a);
+            getRegister((op1 & 0xFF), &a);
             readMemory(op2);
             getRegister(2, &mbrValue);
             b = mbrValue;
-            setRegister(reg1, (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));
+            setRegister((op1 & 0xFF), (a & 0x0000FFFF) | ((b & 0x0000FFFF) << 16));
         }
     }
 }
 
 void op_rnd(uint32_t op1, uint32_t op2) {
-        
     uint32_t mbrValue;  // Variable MBR para operaciones de memoria
     uint8_t sizeOp1 = op1 >> 24;
-
-    if ( sizeOp1 == 2 ){ 
+    if ( sizeOp1 == 2 ){
+        printf("ERROR: Operando 1 invalid\n");
         setRegister(3,0xFFFFFFFF);
-    } else {
-        uint8_t sizeOp2 = op2 >> 24;
-        int32_t a,b;
-        int reg1 = binADecimal(op1);
-        int reg2 = binADecimal(op2);
-        if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
-            getRegister(reg2, &b);
-            a = (uint32_t)rand() % (b + 1);
-            setRegister(reg1, a);
-    
-        }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registr
-            a = (uint32_t)rand() % ((op2 & 0xFFFF) + 1); // Para generalizar setCondicion
-            setRegister(reg1, a);
-    
-        } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
-            a = (uint32_t)rand() % ((op2 & 0xFFFF) + 1);
-            setRegister(2, a);
-            writeMemory(op1);
-    
-        } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
-            getRegister(reg2, &b);
-            a = (uint32_t)rand() % (b + 1);
-            setRegister(2, a);
-            writeMemory(op1);
-
-        } else if ( sizeOp1 == 3 && sizeOp2 == 3 ){     // Memoria a memoria
-            readMemory(op2);
-            getRegister(2, &mbrValue);
-            b = mbrValue;
-            a = (uint32_t)rand() % (b + 1);
-            setRegister(2, a);
-            writeMemory(op1);
-            
-        } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
-            readMemory(op2);
-            getRegister(2, &mbrValue);
-            b = mbrValue;
-            a = (uint32_t)rand() % (b + 1);
-            setRegister(reg1, a);
-        }
-        setCondicion(a);
+        return;
     }
+
+    uint8_t sizeOp2 = op2 >> 24;
+    int32_t a = 0, b = 0;
+    
+    
+
+    if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
+        getRegister((op2 & 0xFF), &b);
+        if (b < 0) { setRegister(3, 0xFFFFFFFF); return; }
+        a = (int32_t)(rand() % ((uint32_t)b + 1));
+        setRegister((op1 & 0xFF), (uint32_t)a);
+
+    } else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
+        b = (int32_t)(int16_t)(op2 & 0xFFFF);
+        if (b < 0) { setRegister(3, 0xFFFFFFFF); return; }
+        a = (int32_t)(rand() % ((uint32_t)b + 1));
+        setRegister((op1 & 0xFF), (uint32_t)a);
+
+    } else if ( sizeOp1 == 3 && sizeOp2 == 2 ){     // Inmediato a memoria
+        b = (int32_t)(int16_t)(op2 & 0xFFFF);
+        if (b < 0) { setRegister(3, 0xFFFFFFFF); return; }
+        a = (int32_t)(rand() % ((uint32_t)b + 1));
+        setRegister(2, (uint32_t)a);
+        writeMemory(op1);
+
+    } else if ( sizeOp1 == 3 && sizeOp2 == 1 ){     // De registro a memoria
+        getRegister((op2 & 0xFF), &b);
+        if (b < 0) { setRegister(3, 0xFFFFFFFF); return; }
+        a = (int32_t)(rand() % ((uint32_t)b + 1));
+        setRegister(2, (uint32_t)a);
+        writeMemory(op1);
+
+    } else if ( sizeOp1 == 3 && sizeOp2 == 3 ){     // Memoria a memoria
+        readMemory(op2);
+        getRegister(2, &mbrValue);
+        b = (int32_t)mbrValue;
+        if (b < 0) { setRegister(3, 0xFFFFFFFF); return; }
+        if (b == 0)
+            a = 0;
+        else
+            a = (int32_t)(rand() % ((uint32_t)b + 1));
+        setRegister(2, (uint32_t)a);
+        writeMemory(op1);
+
+    } else if ( sizeOp1 == 1 && sizeOp2 == 3 ){     // Memoria a registra
+        readMemory(op2);
+        getRegister(2, &mbrValue);
+        b = (int32_t)mbrValue;
+        if (b < 0) { setRegister(3, 0xFFFFFFFF); return; }
+        a = (int32_t)(rand() % ((uint32_t)b + 1));
+        setRegister((op1 & 0xFF), (uint32_t)a);
+    }
+
+    setCondicion((uint32_t)a);
 }
+

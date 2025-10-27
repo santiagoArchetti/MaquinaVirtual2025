@@ -65,8 +65,6 @@ void getRegister(int regIndex, uint32_t* value) {
     }   
 }
 
-
-
 int opCodeExists(uint8_t opCode){
     opCode = opCode & 0x1F;
     if ( ( opCode >= 0x10 && opCode <= 0x1F ) || ( opCode >= 0x00 && opCode <= 0x08 ) || ( opCode >= 0x0B && opCode <= 0x0F ) )
@@ -176,12 +174,13 @@ void getOperandName(uint32_t name) {
 }
 
 void setCondicion(uint32_t value) {
-
-	if (value == 0)
+    
+	if (value == 0x0)
 		setRegister(17, 0x40000000);
-	else if ((value & 0x80000000u) != 0)
-		setRegister(17, 0x80000000);
 	else
-		setRegister(17, 0x0);
+        if ((value & 0x80000000u) != 0)
+            setRegister(17, 0x80000000);
+        else
+            setRegister(17, 0x0);
 
 }

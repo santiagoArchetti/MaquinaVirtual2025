@@ -307,55 +307,62 @@ void sys_breakpoint(FILE *arch){
 
 /* --------------------- JUMPS ------------------------ */
 void op_jmp(uint32_t op1) {
-    setRegister(3, op1 & 0x00FFFFFF); // Actualizar IP
-    printf("JMP: Jumping to address: %04x\n", op1 & 0xFFFF);
+    uint32_t ip;
+    getRegister(3, &ip);
+    setRegister(3, (ip & 0xFFFF0000) | (op1 & 0x00FFFFFF)); // Actualizar IP
 }
 
 void op_jz(uint32_t op1) {
-    uint32_t cc;
+    uint32_t cc,ip;
+    getRegister(3, &ip);
     getRegister(17, &cc);
     if (cc & 0x40000000) {  // Z flag
-        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, (ip & 0xFFFF0000) | (op1 & 0x00FFFFFF)); // Actualizar IP
     }
 }
 
 void op_jp(uint32_t op1) {
-    uint32_t cc;
+    uint32_t cc,ip;
     getRegister(17, &cc);
+    getRegister(3, &ip);
     if (!(cc & 0x40000000) && !(cc & 0x80000000)) {  // No Z y no N
-        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, (ip & 0xFFFF0000) | (op1 & 0x00FFFF));  // Saltar
     }
 }
 
 void op_jn(uint32_t op1) {
-    uint32_t cc;
+    uint32_t cc,ip;
+    getRegister(3, &ip);
     getRegister(17, &cc);
     if (cc & 0x80000000) {  // N flag
-        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, (ip & 0xFFFF0000) | (op1 & 0x00FFFFFF)); // Actualizar IP
     }
 }
 
 void op_jnz(uint32_t op1) {
-    uint32_t cc;
+    uint32_t cc,ip;
+    getRegister(3, &ip);
     getRegister(17, &cc);
     if (!(cc & 0x40000000)) {  // No Z flag
-        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, (ip & 0xFFFF0000) | (op1 & 0x00FFFFFF)); // Actualizar IP
     }
 }
 
 void op_jnp(uint32_t op1) {
-    uint32_t cc;
+    uint32_t cc,ip;
+    getRegister(3, &ip);
     getRegister(17, &cc);
     if ((cc & 0x40000000) || (cc & 0x80000000)) {  // Z o N
-        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, (ip & 0xFFFF0000) | (op1 & 0x00FFFFFF)); // Actualizar IP
     }
 }
 
 void op_jnn(uint32_t op1) {
-    uint32_t cc;
+    uint32_t cc,ip;
+    getRegister(3, &ip);
     getRegister(17, &cc);
     if (!(cc & 0x80000000)) {  // No N flag
-        setRegister(3, op1 & 0x00FFFFFF);  // Saltar
+        setRegister(3, (ip & 0xFFFF0000) | (op1 & 0x00FFFFFF)); // Actualizar IP
     }
 }
 
@@ -448,10 +455,8 @@ void op_pop(uint32_t op1){
         readStack(SP); // guarda en mbr tope de la pila
 
         if (sizeOp1 == 1){ // registro
-            uint32_t reg1 = binADecimal(op1);
             getRegister(2,&value);
-
-            int reg = op1 & 0x1F;
+            int reg = op1 & 0xFF;
             uint8_t part = (op1 >> 6) & 0x03;
 
             // Ajustar tamaño antes de escribir
@@ -475,6 +480,6 @@ void op_call (uint32_t op1){
     uint32_t IP;
     getRegister(3,&IP);     // obtengo IP
     setRegister(2,IP);      // guardo valor del IP en mbr
-    op_push(0x01000003);    // pusheo IP (mando IP solo porque pide un operando, pero no es necesario, el mbr ya esta modificado)
-    op_jmp(op1);            // verificar que funcione correctamente con la subrutina
+    op_push(0x01000003);
+    op_jmp((IP & 0xFFFF0000) | ((op1 & 0xFFFF)));            // verificar que funcione correctamente con la subrutina
 }
