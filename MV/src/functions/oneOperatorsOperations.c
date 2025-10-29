@@ -97,7 +97,6 @@ void sys_read() {
             } else if (eax & 0x08) { // Hexadecimal
                 int32_t valor;
                 scanf("%x", &valor);
-                printf("valor leido: %08X\n", valor);
                 
                 // Sign-extend basado en tamano_celda para propagar el signo correctamente
                 if (tamano_celda == 1 && (valor & 0x80))
@@ -316,11 +315,14 @@ void sys_string_write(){
         printf(" | \"");
         readByte(direccion_fisica, &car);
         while ((car != '\0') && (car != '\n') && (car != '\r')) {
-            printf("%c",car);
+            if (car > 0x1F || car < 0x7F)
+                printf("%c",car);
+            else
+                printf(".");
             i++;
-            memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
+            memoryAccess((edx >> 16), (edx & 0xFFFF) + i, &direccion_actual, &direccion_fisica, 3);
             setRegister(2, car);
-            readByte((direccion_fisica + i), &car);
+            readByte((direccion_fisica), &car);
         }
         printf("\"\n");
     } else {

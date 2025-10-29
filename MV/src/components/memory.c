@@ -145,7 +145,7 @@ void writeMemory (uint32_t op) {
     // Extraer el segundo byte más significativo para saber el registro (bits 16–23)
     uint8_t extractedByte = (op >> 16) & 0xFF;
     uint32_t registerValue;
-    getRegister(extractedByte, &registerValue);
+    getRegister(((op >> 16) & 0x1F) | 0x00000000, &registerValue);
     uint16_t segmentRegister = (uint16_t)(registerValue >> 16);
     uint16_t offset = (op & 0xFFFF) + (registerValue & 0xFFFF);
      
