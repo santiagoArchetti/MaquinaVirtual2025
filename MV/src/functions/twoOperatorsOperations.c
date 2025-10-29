@@ -368,6 +368,7 @@ void op_cmp(uint32_t op1, uint32_t op2) {
             getRegister(2, &mbrValue);
             b = mbrValue;
         }
+        printf("a: %08X b: %08X \n",a,b);
         setCondicion(a - b);
     }
 }
@@ -729,6 +730,8 @@ void op_xor(uint32_t op1, uint32_t op2) {
             b = mbrValue;
             setRegister((op1 & 0xFF), a ^ b);
         }
+        printf("a: %08X\tb: %08X\n",a,b);
+        printf("XOR: %08X\n",a ^ b);
         setCondicion(a ^ b);
     }
 }

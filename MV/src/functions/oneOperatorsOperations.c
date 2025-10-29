@@ -97,7 +97,7 @@ void sys_read() {
             } else if (eax & 0x08) { // Hexadecimal
                 uint32_t valor;
                 scanf("%x", &valor);
-                
+                printf("valor leido: %08X\n",valor);
                 // Escribir valor en memoria (big-endian)
                 for (int j = 0; j < tamano_celda && j < 4; j++) {
                     uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;

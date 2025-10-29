@@ -52,7 +52,7 @@ void getRegister(int regIndex, uint32_t* value) {
 
     *value = registers.registerValue[index];
 
-    switch ((reg >> 6) & 0x03) {
+    switch ((reg >> 6) & 0x3) {
         case 0x1:       // parte baja (byte 0)
             *value &= 0xFF;
             break;
@@ -62,7 +62,7 @@ void getRegister(int regIndex, uint32_t* value) {
         case 0x3:       // Dos bytes menos significativos
             *value &= 0xFFFF; 
             break;
-    }   
+    }
 }
 
 int opCodeExists(uint8_t opCode){
