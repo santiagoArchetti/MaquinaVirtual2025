@@ -676,6 +676,8 @@ void op_xor(uint32_t op1, uint32_t op2) {
     uint32_t mbrValue;  // Variable MBR para operaciones de memoria
     uint8_t sizeOp1 = op1 >> 24;
 
+    printf("op1: %08X  op2: %08X\n",op1,op2);
+
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
         return;

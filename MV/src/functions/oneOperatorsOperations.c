@@ -215,45 +215,58 @@ void sys_string_read(){
     getRegister(12,&ecx);
     getRegister(13,&edx);
     uint32_t direccion_actual = edx;    // probablemente no necesario
+    printf("edx: %08X\n",edx);
     uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
         
-    if (ecx > 0) {
-        if (isValidAddress(direccion_fisica, ecx + 1, (uint16_t)(edx >> 16) )) {  // Vemos si hay espacio sufciente para escribir
+    if (ecx > 0x0) {
+        if (isValidAddress(direccion_fisica, ecx + 1, (uint16_t)(edx >> 16))) {  // Vemos si hay espacio suficiente para escribir
             char car;
             
-            for (int i = 0; i < ecx ; i++){
-                scanf("%c",&car);
+            for (int i = 0; i < ecx; i++) {
+                scanf("%c", &car);
                 writeByte(direccion_fisica + i, car);
-                // Por si hay que hacer manejo de la memoria
-                memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
+                // Si el usuario presiona Enter, terminar la lectura
+                if (car == '\n' || car == '\r') {
+                    writeByte(direccion_fisica + i, '\0');
+                    return;
+                }
                 setRegister(2, car);
             }
-            writeByte(direccion_fisica + ecx + 1,'\0');   // Le agregamos el caracter nulo
+            // Escribir el null terminator en la posicion correcta
+            writeByte(direccion_fisica + ecx, '\0');
         } else {
-            printf("Error: Espacio en memoria insuficiente.");
-            setRegister(3,0xFFFFFFFF);
+            printf("Error: Espacio en memoria insuficiente.\n");
+            setRegister(3, 0xFFFFFFFF);
         }
-    } else
-        if (ecx == -1){
-            char car = ' ';
-            int i = 0;
-            while ( isValidAddress(direccion_fisica + i, 1, (uint16_t)(edx >> 16) ) && (car != '\0') ) {
-                scanf("%c",&car);
-                writeByte(direccion_fisica + i, car);
-                memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
-                setRegister(2, car);
-                i++;
+    } else if (ecx == 0xFFFFFFFF) {
+        char car;
+        int i = 0;
+        
+        // Leer hasta encontrar Enter o alcanzar limite del segmento
+        while (isValidAddress(direccion_fisica + i, 1, (uint16_t)(edx >> 16))) {
+            scanf("%c", &car);
+            
+            // Si el usuario presiona Enter, terminar
+            if (car == '\n' || car == '\r') {
+                writeByte(direccion_fisica + i, '\0');
+                return;
             }
-            if (isValidAddress(direccion_fisica + i, 1, (uint16_t)(edx >> 16) ))
-              writeByte(direccion_fisica + i, '\0');
-            else {
-                printf("Error: Espacio en memoria insuficiente.");
-                 setRegister(3,0xFFFFFFFF);
-            }      
-        } else {
-            printf("Error: Invalid Operation ECX incorrect Value for this operation.");
-            setRegister(3,0xFFFFFFFF);
+            
+            writeByte(direccion_fisica + i, car);
+            setRegister(2, car);
+            i++;
         }
+        // Si salimos del bucle por limite de segmento, verificar si podemos escribir el null
+        if (isValidAddress(direccion_fisica + i, 1, (uint16_t)(edx >> 16))) {
+            writeByte(direccion_fisica + i, '\0');
+        } else {
+            printf("Error: Espacio en memoria insuficiente.\n");
+            setRegister(3, 0xFFFFFFFF);
+        }
+    } else {
+        printf("Error: Invalid Operation ECX incorrect Value for this operation.\n");
+        setRegister(3, 0xFFFFFFFF);
+    }
 }
 
 void sys_string_write(){
