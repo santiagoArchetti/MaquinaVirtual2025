@@ -294,7 +294,7 @@ void sys_string_write(){
     getRegister(13,&edx);
     getRegister(30,&KS);
     uint32_t direccion_actual = edx;    // probablemente no necesario
-    uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
+    uint32_t direccion_fisica = getFisicalAddress(edx);
     char car = ' ';
 
     if (isValidAddress(direccion_fisica, 1, (uint16_t)(edx >> 16) )){
@@ -318,7 +318,7 @@ void sys_string_write(){
         while ((car != '\0') && (car != '\n') && (car != '\r')) {
             printf("%c",car);
             i++;
-            memoryAccess((edx >> 16), (edx & 0xFFFF) + i, &direccion_actual, &direccion_fisica, 1);
+            memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
             setRegister(2, car);
             readByte((direccion_fisica + i), &car);
         }
