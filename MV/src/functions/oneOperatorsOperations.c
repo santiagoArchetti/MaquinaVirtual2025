@@ -308,22 +308,24 @@ void sys_clear_screen(){
 
 void sys_breakpoint(FILE *arch){
     
-    if (arch == NULL)
-        arch = fopen("imagen.vmi", "wb");
-    fseek(arch, 0, 0);
-    setImage(arch);
-    
-    char stop;
-    scanf("%c", &stop);
-    switch (stop) {
-        case 'q': setRegister(3,0xFFFFFFFF); break;
-        case 'g': flag = 0; break;
-        case '\n': 
-        case '\r': flag = 1; break;
-        default: {
-            printf("ERROR: el caracter (%c) ingresado es invalido",stop);
-            setRegister(3,0xFFFFFFFF);
+    if (arch != NULL){
+        fseek(arch, 0, 0);
+        setImage(arch);
+        
+        char stop;
+        scanf("%c", &stop);
+        switch (stop) {
+            case 'q': setRegister(3,0xFFFFFFFF); break;
+            case 'g': flag = 0; break;
+            case '\n': 
+            case '\r': flag = 1; break;
+            default: {
+                printf("ERROR: el caracter (%c) ingresado es invalido",stop);
+                setRegister(3,0xFFFFFFFF);
+            }
         }
+    } else {
+        printf("ERROR: Archivo de imagen nulo.\n");
     }
 }
 
