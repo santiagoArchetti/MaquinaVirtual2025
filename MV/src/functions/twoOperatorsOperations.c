@@ -336,7 +336,6 @@ void op_cmp(uint32_t op1, uint32_t op2) {
         if ( sizeOp1 == 1 && sizeOp2 == 1 ){     // De registro a registro
             getRegister((op1 & 0xFF), &a);
             getRegister((op2 & 0xFF), &b);
-            printf("a: %08X b: %08X\n", a, b);
     
         }  else if ( sizeOp1 == 1 && sizeOp2 == 2 ){     // Inmediato a registro
             getRegister((op1 & 0xFF), &a);
@@ -368,7 +367,6 @@ void op_cmp(uint32_t op1, uint32_t op2) {
             getRegister(2, &mbrValue);
             b = mbrValue;
         }
-        printf("a: %08X b: %08X \n",a,b);
         setCondicion(a - b);
     }
 }
@@ -677,8 +675,6 @@ void op_xor(uint32_t op1, uint32_t op2) {
     uint32_t mbrValue;  // Variable MBR para operaciones de memoria
     uint8_t sizeOp1 = op1 >> 24;
 
-    printf("op1: %08X  op2: %08X\n",op1,op2);
-
     if ( sizeOp1 == 2 ){ 
         setRegister(3,0xFFFFFFFF);
         return;
@@ -730,8 +726,6 @@ void op_xor(uint32_t op1, uint32_t op2) {
             b = mbrValue;
             setRegister((op1 & 0xFF), a ^ b);
         }
-        printf("a: %08X\tb: %08X\n",a,b);
-        printf("XOR: %08X\n",a ^ b);
         setCondicion(a ^ b);
     }
 }

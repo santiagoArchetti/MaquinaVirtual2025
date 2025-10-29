@@ -95,9 +95,16 @@ void sys_read() {
                 }
                 
             } else if (eax & 0x08) { // Hexadecimal
-                uint32_t valor;
+                int32_t valor;
                 scanf("%x", &valor);
-                printf("valor leido: %08X\n",valor);
+                printf("valor leido: %08X\n", valor);
+                
+                // Sign-extend basado en tamano_celda para propagar el signo correctamente
+                if (tamano_celda == 1 && (valor & 0x80))
+                    valor |= 0xFFFFFF00;
+                else if (tamano_celda == 2 && (valor & 0x8000))
+                    valor |= 0xFFFF0000;
+                
                 // Escribir valor en memoria (big-endian)
                 for (int j = 0; j < tamano_celda && j < 4; j++) {
                     uint8_t byte = (valor >> ((tamano_celda - 1 - j) * 8)) & 0xFF;
@@ -105,8 +112,14 @@ void sys_read() {
                 }
                 
             } else if (eax & 0x04) { // Octal
-                uint32_t valor;
+                int32_t valor;
                 scanf("%o", &valor);
+                
+                // Sign-extend basado en tamano_celda para propagar el signo correctamente
+                if (tamano_celda == 1 && (valor & 0x80))
+                    valor |= 0xFFFFFF00;
+                else if (tamano_celda == 2 && (valor & 0x8000))
+                    valor |= 0xFFFF0000;
                 
                 // Escribir valor en memoria (big-endian)
                 for (int j = 0; j < tamano_celda && j < 4; j++) {
@@ -118,10 +131,16 @@ void sys_read() {
                 char binario[33];
                 scanf("%s", binario);
                 
-                uint32_t valor = 0;
+                int32_t valor = 0;
                 for (int k = 0; binario[k] != '\0'; k++) {
                     valor = (valor << 1) + (binario[k] - '0');
                 }
+                
+                // Sign-extend basado en tamano_celda para propagar el signo correctamente
+                if (tamano_celda == 1 && (valor & 0x80))
+                    valor |= 0xFFFFFF00;
+                else if (tamano_celda == 2 && (valor & 0x8000))
+                    valor |= 0xFFFF0000;
                 
                 // Escribir valor en memoria (big-endian)
                 for (int j = 0; j < tamano_celda && j < 4; j++) {
@@ -276,8 +295,8 @@ void sys_string_write(){
     getRegister(30,&KS);
     uint32_t direccion_actual = edx;    // probablemente no necesario
     uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
-    
     char car = ' ';
+
     if (isValidAddress(direccion_fisica, 1, (uint16_t)(edx >> 16) )){
         int i = 0, j = 0;
         printf("[%04X] ", direccion_fisica);
@@ -295,11 +314,11 @@ void sys_string_write(){
                 printf("%02X",car);
         }
         printf(" | \"");
-        readByte((direccion_fisica + i), &car);
+        readByte(direccion_fisica, &car);
         while ((car != '\0') && (car != '\n') && (car != '\r')) {
             printf("%c",car);
             i++;
-            memoryAccess((edx >> 16), (edx & 0xFFFF), &direccion_actual, &direccion_fisica, 1);
+            memoryAccess((edx >> 16), (edx & 0xFFFF) + i, &direccion_actual, &direccion_fisica, 1);
             setRegister(2, car);
             readByte((direccion_fisica + i), &car);
         }

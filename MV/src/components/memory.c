@@ -113,7 +113,6 @@ void readMemory (uint32_t op) {
     uint32_t mbrValue = 0x0;  // Inicializar mbrValue
     uint32_t aux = ((op >> 22) & 0x3); // sirve para saber si es 'l' (0), 'w' (2) o 'b' (3)
     memoryAccess((uint32_t)segmentRegister, (uint32_t)offset, &logicalAddress, &physicalAddress, aux); //setea configuracion de memoria para lectura
-    printf("fisical_addres: %08X\n",physicalAddress);
     uint32_t marValue;
     getRegister(1, &marValue);
     int bytesToRead = marValue >> 16;
@@ -128,6 +127,12 @@ void readMemory (uint32_t op) {
         setRegister(3,0xFFFFFFFF);
         return;
     }
+    
+    switch (bytesToRead){
+        case 1: mbrValue = (((mbrValue >> 7) & 0x01) == 0x1) ? (mbrValue | 0xFFFFFF00) : mbrValue; break;
+        case 2: mbrValue = (((mbrValue >> 15) & 0x01) == 0x1) ? (mbrValue | 0xFFFF0000) : mbrValue; break;
+    }
+    
     setRegister(2, mbrValue);
 }
 
