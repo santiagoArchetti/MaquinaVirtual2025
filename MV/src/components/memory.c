@@ -19,8 +19,7 @@ void initMemory(int memorySize) {
     }
     
     // Asignar memoria dinámicamente
-    memory.data = (uint8_t*)malloc(memorySize * sizeof(uint8_t));
-    
+    memory.data = (uint8_t *)malloc(memorySize * 1024);
     if (memory.data == NULL) {
         printf("Error: Could not allocate memory of size %d bytes\n", memorySize);
         memory.initialized = 0;
@@ -30,10 +29,10 @@ void initMemory(int memorySize) {
     
     // Inicializar toda la memoria con ceros
     memset(memory.data, 0, memorySize);
-    memory.size = memorySize;
+    memory.size = memorySize * 1024;
     memory.initialized = 1;
     
-    printf("Main memory initialized: %d bytes (%.2f KiB)\n", memorySize, memorySize / 1024.0);
+    printf("Main memory initialized: %d bytes (%d KiB)\n", memorySize * 1024, memorySize);
     printf("Available addresses: 0 to %d\n", memorySize - 1);
 }
 
@@ -117,6 +116,7 @@ void readMemory (uint32_t op) {
     getRegister(1, &marValue);
     int bytesToRead = marValue >> 16;
     // Lectura de bytes de memoria (big-endian)
+
     if (isValidAddress(physicalAddress, bytesToRead, segmentRegister)) {
         for (int i = 0; i < bytesToRead; i++ ) {
             readByte(physicalAddress + i, &data);

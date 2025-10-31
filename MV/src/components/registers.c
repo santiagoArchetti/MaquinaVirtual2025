@@ -161,8 +161,14 @@ void getOperandName(uint32_t name) {
             printf("%04X", (uint16_t)(name & 0x0000FFFF));
         } else 
             if (type == 0x03) {
-                // 🔹 Tipo memoria → formato: [registro + desplazamiento]
-                uint16_t regPart = (name >> 16) & 0xFFFF;
+                switch ((name >> 22) & 0x3) {
+                    case 0x0: printf("l"); break;
+                    case 0x2: printf("w"); break;
+                    case 0x3: printf("b"); break;
+                    default: break;
+                }
+                // Tipo memoria → formato: [registro + desplazamiento]
+                uint16_t regPart = (name >> 16) & 0xFF;
                 uint16_t offset  = name & 0xFFFF;
 
                 printf("[");

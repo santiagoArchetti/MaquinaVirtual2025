@@ -12,29 +12,68 @@ void setImage(FILE *arch){
     
     // Creacion de cabecera
     char header[5] = "VMI25";
-    uint8_t version = 0x1;
+    uint8_t version = 0x1, memorySizeHigh = (uint8_t)(memory.size >> 8), memorySizeLow = (uint8_t)(memory.size & 0xFF);
     fwrite(&header, sizeof(uint8_t), 5, arch);
     fwrite(&version, sizeof(uint8_t), 1, arch);
-    fwrite(&(memory.size), sizeof(uint16_t), 1, arch);
+    fwrite(&memorySizeHigh, sizeof(uint8_t), 1, arch);
+    fwrite(&memorySizeLow, sizeof(uint8_t), 1, arch);
 
     // Datos de memoria, registros y segmentos
-    int p;
-    uint32_t aux;
-    uint8_t mem;
+    int p,r;
+    uint8_t datoAEscribir;
+    uint32_t reg;
+    uint8_t aux;
     // Setteo de registros
     for (p = 0; p < 32; p++){
-        getRegister(p,&aux);
-        fwrite(&aux, sizeof(uint32_t), 1, arch);
+        getRegister(p,&reg);
+        for (r = 0; r < 4; r++){
+            aux = (uint8_t)((reg >> ((3 - r) * 8)) & 0xFF);
+            fwrite(&aux, sizeof(uint8_t), 1, arch);
+        }
     }
+    aux = 0x0;
     // Setteo de tabla
     for (p = 0; p < 8; p++){
-        fwrite(&segmentTable.segment[p], sizeof(uint32_t), 1, arch);
+        for (r = 0; r < 4; r++){
+            aux = (uint8_t)(((segmentTable.segment[p]) >> ((3 - r) * 8)) & 0xFF);
+            fwrite(&aux, sizeof(uint8_t), 1, arch);
+        }
+    }
+    aux = 0x0;
+    // Setteo de memoria
+    for (p = 0; p < memory.size; p++) {
+        readByte(p,&aux);
+        fwrite(&aux, sizeof(uint8_t), 1, arch);
+    }
+/*  uint8_t datoAEscribir;
+    codeSize = 0;
+    int r;
+    for (r = 0; r < 2; r++) {
+        fread(&datoLeido, sizeof(uint8_t), 1, fileB);
+        codeSize = (codeSize << 8) | datoLeido;
+    }
+    for (p = 0; p < 32; p++){
+        for (r = 0; r < 4; r++) {
+            fread(&datoLeido, sizeof(uint8_t), 1, fileB);
+            aux = (aux << 8) | datoLeido;
+        }
+        setRegister(p,aux);
+    }
+    aux = 0x0;
+    for (p = 0; p < 8; p++){
+        for (r = 0; r < 4; r++) {
+            fread(&datoLeido, sizeof(uint8_t), 1, fileB);
+            aux = (aux << 8) | datoLeido;
+        }
+        if (aux != 0xFFFFFFFF)
+            setSegmentTable(aux);
     }
     // Setteo de memoria
     for (p = 0; p < memory.size; p++) {
-        readByte(p,&mem);
-        fwrite(&mem, sizeof(uint8_t), 1, arch);
+        fread(&opCode, sizeof(uint8_t), 1, fileB);
+        writeByte(p, opCode);
     }
+*/
     
 }
 
@@ -329,7 +368,6 @@ void sys_string_write(){
         printf("ERROR: direccion fisica invalida");
         setRegister(3,0xFFFFFFFF);
     }
-    
 }
 
 void sys_clear_screen(){

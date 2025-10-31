@@ -128,6 +128,7 @@ void beginExecution(FILE *filei, int debug) {
                         getOperandName(operandB);
                     } else if (op1Bytes > 0) {
                         printf(" ");
+
                         getOperandName(operandA);
                     }
                     printf("\n");
@@ -367,19 +368,34 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
             }
     } else
         if (fileB != NULL){ // Solo hay imagen
-            fread(&codeSize, sizeof(uint16_t), 1, fileB);
+            uint8_t datoLeido;
+            codeSize = 0;
+            int r;
+            for (r = 0; r < 2; r++) {
+                fread(&datoLeido, sizeof(uint8_t), 1, fileB);
+                codeSize = (codeSize << 8) | datoLeido;
+            }
             initMemory(codeSize);
             int p;
             uint32_t aux;
             // Setteo de registros
             for (p = 0; p < 32; p++){
-                fread(&aux, sizeof(uint32_t), 1, fileB);
+                for (r = 0; r < 4; r++) {
+                    fread(&datoLeido, sizeof(uint8_t), 1, fileB);
+                    aux = (aux << 8) | datoLeido;
+                }
                 setRegister(p,aux);
             }
+            aux = 0x0;
+            initSegmentTable();
             // Setteo de tabla
             for (p = 0; p < 8; p++){
-                fread(&aux, sizeof(uint32_t), 1, fileB);
-                setSegmentTable(aux);
+                for (r = 0; r < 4; r++) {
+                    fread(&datoLeido, sizeof(uint8_t), 1, fileB);
+                    aux = (aux << 8) | datoLeido;
+                }
+                if (aux != 0xFFFFFFFF)
+                    setSegmentTable(aux);
             }
             // Setteo de memoria
             for (p = 0; p < memory.size; p++) {
@@ -389,16 +405,11 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
         } else { 
             return;
         }
-    if (debug) {
-            printf("==========================================\n");
-            printf("           DISASSEMBLER VMX25            \n");
-            printf("==========================================\n");
-            printf("Header: VMX25 | Version: %d | Size: %u bytes\n", version, codeSize);
-    } else {
+    
         printf("==========================================\n");
         printf("          STARTING EXECUTION             \n");
         printf("==========================================\n");
-    }
+    
 
     beginExecution(fileB, debug);
 }
@@ -425,7 +436,7 @@ int main(int argc, char* argv[]) {
     int i = 1, len;
     FILE *fileA = NULL;
     FILE *fileB = NULL;
-    int memorySize = 16384, debug = 0, gotVmx = 0, gotParams = 0;
+    int memorySize = 1024, debug = 0, gotVmx = 0, gotParams = 0;
 
     // Variables para parámetros
     char **lista = NULL;
@@ -447,14 +458,7 @@ int main(int argc, char* argv[]) {
         }
         // Buscar archivo .i (input)
         else if (len > 4 && strcmp(&argv[i][len-4], ".vmi") == 0) {
-            if (fileA == NULL) {
-                // Abrir en modo lectura/escritura binaria, creándolo si no existe
-                fileB = fopen(argv[i], "r+b");
-                if (!fileB)
-                    fileB = fopen(argv[i], "w+b");
-            } else {
-                fileB = fopen(argv[i], "wb");
-            }
+            fileB = fopen(argv[i], "r+b");
         }
         // Opción de memoria m=M
         else if (len > 2 && argv[i][0] == 'm' && argv[i][1] == '=') {
