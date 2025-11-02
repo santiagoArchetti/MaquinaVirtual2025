@@ -347,26 +347,35 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 }
                 
                 if (debug != 0 && KS != 0xFFFFFFFF){
-                    int t = 0, j = 0;
+                    int t = 0, j = 0, f;
                     uint32_t actual, base1 = (uint32_t) base;
                     char car = ' ';
                     setRegister(10, 0x2);
                     setRegister(12, 0xFFFFFFFF);
+                    int paddingNeeded; // 3 chars por byte
                     while (base1 < tam) {
                         printf("[%04X] ", base1);
-                        t = 0;
-                        while ((t < 6) && (car != '\0')){
-                            readByte((base1 + t), &car);
+                        t = 1;
+                        paddingNeeded = 19;
+                        readByte((base1), &car);
+                        while ((t < 7) && (car != '\0')){
                             printf("%02X",car);
                             printf(" ");
+                            paddingNeeded -= 3;
+                            readByte((base1 + t), &car);
                             t++;
                         }
-                        
+                        if (paddingNeeded < 0)
+                            paddingNeeded = 0;
+
                         if ((car != '\0'))
                             printf("...");
                         else {
-                            readByte((base1 + t), &car); // leo el nulo
+                            readByte((base1 + t - 1), &car); // leo el nulo
                             printf("%02X",car);
+                            for (f = 0; f < paddingNeeded; f++) {
+                                printf(" ");
+                            }
                         }
                         printf(" | \"");
                         t = 0;
@@ -447,26 +456,34 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
             getRegister(30,&KS);
             getSegmentRange((KS >> 16) & 0xFFFF, &base, &tam);
             if (debug != 0 && KS != 0xFFFFFFFF){
-                int t = 0, j = 0;
+                int t, f, j = 0, paddingNeeded;
                 uint32_t actual, base1 = (uint32_t) base;
                 char car = ' ';
                 setRegister(10, 0x2);
                 setRegister(12, 0xFFFFFFFF);
                 while (base1 < tam) {
                     printf("[%04X] ", base1);
-                    t = 0;
-                    while ((t < 6) && (car != '\0')){
-                        readByte((base1 + t), &car);
+                    t = 1;
+                    paddingNeeded = 19;
+                    readByte((base1), &car);
+                    while ((t < 7) && (car != '\0')){
                         printf("%02X",car);
                         printf(" ");
+                        paddingNeeded -= 3;
+                        readByte((base1 + t), &car);
                         t++;
                     }
-                    
+                    if (paddingNeeded < 0)
+                        paddingNeeded = 0;
+
                     if ((car != '\0'))
                         printf("...");
                     else {
-                        readByte((base1 + t), &car); // leo el nulo
+                        readByte((base1 + t - 1), &car); // leo el nulo
                         printf("%02X",car);
+                        for (f = 0; f < paddingNeeded; f++) {
+                            printf(" ");
+                        }
                     }
                     printf(" | \"");
                     t = 0;
