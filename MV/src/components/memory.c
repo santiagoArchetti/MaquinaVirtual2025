@@ -21,7 +21,7 @@ void initMemory(int memorySize) {
     // Asignar memoria dinámicamente
     memory.data = (uint8_t *)malloc(memorySize * 1024);
     if (memory.data == NULL) {
-        printf("Error: Could not allocate memory of size %d bytes\n", memorySize);
+        printf("Error: Could not allocate memory of size %d bytes\n", (memorySize * 1024));
         memory.initialized = 0;
         memory.size = 0;
         return;
@@ -33,7 +33,7 @@ void initMemory(int memorySize) {
     memory.initialized = 1;
     
     printf("Main memory initialized: %d bytes (%d KiB)\n", memorySize * 1024, memorySize);
-    printf("Available addresses: 0 to %d\n", memorySize - 1);
+    printf("Available addresses: 0 to %d\n", (memorySize * 1024) - 1);
 }
 
 // Funcion para liberar la memoria
