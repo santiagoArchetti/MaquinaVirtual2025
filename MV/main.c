@@ -442,6 +442,50 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                 fread(&opCode, sizeof(uint8_t), 1, fileB);
                 writeByte(p, opCode);
             }
+            uint32_t KS;
+            uint16_t base,tam;
+            getRegister(30,&KS);
+            getSegmentRange((KS >> 16) & 0xFFFF, &base, &tam);
+            if (debug != 0 && KS != 0xFFFFFFFF){
+                int t = 0, j = 0;
+                uint32_t actual, base1 = (uint32_t) base;
+                char car = ' ';
+                setRegister(10, 0x2);
+                setRegister(12, 0xFFFFFFFF);
+                while (base1 < tam) {
+                    printf("[%04X] ", base1);
+                    t = 0;
+                    while ((t < 6) && (car != '\0')){
+                        readByte((base1 + t), &car);
+                        printf("%02X",car);
+                        printf(" ");
+                        t++;
+                    }
+                    
+                    if ((car != '\0'))
+                        printf("...");
+                    else {
+                        readByte((base1 + t), &car); // leo el nulo
+                        printf("%02X",car);
+                    }
+                    printf(" | \"");
+                    t = 0;
+                    readByte(base1, &car);
+                    while ((car != '\0') && (car != '\n') && (car != '\r')) {
+                        if (car > 0x1F || car < 0x7F)
+                            printf("%c",car);
+                        else
+                            printf(".");    
+                        t++;
+                        memoryAccess((KS >> 16), (KS & 0xFFFF) + j + t, &actual, &base1, 3);
+                        setRegister(2, car);
+                        readByte(base1, &car);
+                    }
+                    j += (t + 1);
+                    base1++;
+                    printf("\\n\"\n");
+                }
+            }
         } else { 
             return;
         }
