@@ -12,7 +12,8 @@ void setImage(FILE *arch){
     
     // Creacion de cabecera
     char header[5] = "VMI25";
-    uint8_t version = 0x1, memorySizeHigh = (uint8_t)(memory.size >> 8), memorySizeLow = (uint8_t)(memory.size & 0xFF);
+    uint16_t size = (memory.size / 1024);
+    uint8_t version = 0x1, memorySizeHigh = (uint8_t)(size >> 8), memorySizeLow = (uint8_t)(size & 0xFF);
     fwrite(&header, sizeof(uint8_t), 5, arch);
     fwrite(&version, sizeof(uint8_t), 1, arch);
     fwrite(&memorySizeHigh, sizeof(uint8_t), 1, arch);
@@ -272,7 +273,6 @@ void sys_string_read(){
     getRegister(12,&ecx);
     getRegister(13,&edx);
     uint32_t direccion_actual = edx;    // probablemente no necesario
-    printf("edx: %08X\n",edx);
     uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
         
     if (ecx > 0x0) {
@@ -539,11 +539,11 @@ void op_pop(uint32_t op1){
     getRegister(7,&SP);
     getRegister(29,&SS);
 
-    uint32_t direccion_fisica = getFisicalAddress(SP - 4);
+    uint32_t direccion_fisica = getFisicalAddress(SP + 4);
     getSegmentRange((SS >> 16), &base, &tam);
 
     if ( (int32_t)(direccion_fisica) > (base + tam)){
-        printf("ERROR: STACK UNDERFLOW");
+        printf("ERROR: STACK UNDERFLOW\n");
         setRegister(3,0xFFFFFFFF);
     } else {
         uint32_t value;
