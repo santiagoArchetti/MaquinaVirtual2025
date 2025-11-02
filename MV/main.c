@@ -240,7 +240,7 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                     fread(&sizeHigh, sizeof(uint8_t), 1, fileA);
                     fread(&sizeLow, sizeof(uint8_t), 1, fileA);
                     sizes[ii] = ((uint16_t)sizeHigh << 8) | sizeLow; // Code=0, Data=1, Extra=2, Stack=3, Const=4
-                    printf("Segment %d size: %04X\n", ii, sizes[ii]);
+                    // printf("Segment %d size: %04X\n", ii, sizes[ii]);
                 }
                 
                 // Usar el tamaño del Param Segment calculado previamente
@@ -288,9 +288,8 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                         segmentTableIndex++;
                     }
                 }
-
-                // Mostrar tabla de segmentos y registros
-                 
+/*
+                // Mostrar tabla de segmentos y registros 
                 printf("\n=== TABLA DE SEGMENTOS ===\n");
                 printf("Indice | Segmento | Base  | size\n");
                 printf("-------|----------|-------|--------\n");
@@ -299,7 +298,7 @@ void analizeHeader(FILE *fileA,FILE *fileB, int debug,int gotParams, uint32_t of
                     getSegmentRange(i, &base, &length);
                     printf("  %2d   |     %2d   | %04X  | %04X\n", i, i, base, length);
                 }
-                
+*/                
                 // Mostrar registros de segmento
                 /*
                 uint32_t CS, DS, ES, SS1, KS1, PS1;

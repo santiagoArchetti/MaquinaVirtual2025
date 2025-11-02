@@ -106,8 +106,7 @@ void sys_read() {
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
 
-    printf("SYS READ | Dir: 0x%08X | Count: %u | Size: %04X\n", 
-           edx, cantidad, tamano_celda);
+    // printf("SYS READ | Dir: 0x%08X | Count: %u | Size: %04X\n", edx, cantidad, tamano_celda);
     for (int i = 0; i < cantidad; i++) {
         uint32_t direccion_actual = edx + (i * tamano_celda);
         uint32_t direccion_fisica = getFisicalAddress(direccion_actual);
@@ -212,7 +211,7 @@ void sys_write() {
     uint16_t cantidad = ecx & 0xFFFF;        // 16 bits bajos
     uint16_t tamano_celda = (ecx >> 16) & 0xFFFF; // 16 bits altos
 
-    printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %04X\n", edx, cantidad, tamano_celda);
+    // printf("SYS WRITE | Dir: 0x%08X | Count: %u | Size: %04X\n", edx, cantidad, tamano_celda);
  
     for (int i = 0; i < cantidad; i++) {
         uint32_t direccion_actual = edx + (i * tamano_celda);
@@ -337,6 +336,7 @@ void sys_string_write(){
 
     if (isValidAddress(direccion_fisica, 1, (uint16_t)(edx >> 16) )){
         int i = 0, j = 0;
+        /*
         printf("[%04X] ", direccion_fisica);
         if ((edx & 0xFFFF0000) == (KS & 0xFFFF0000)){
             while ((j < 6) && (car != '\0')){
@@ -351,7 +351,7 @@ void sys_string_write(){
             else
                 printf("%02X",car);
         }
-        printf(" | \"");
+        printf(" | \"");*/
         readByte(direccion_fisica, &car);
         while ((car != '\0') && (car != '\n') && (car != '\r')) {
             if (car > 0x1F || car < 0x7F)
@@ -363,9 +363,9 @@ void sys_string_write(){
             setRegister(2, car);
             readByte((direccion_fisica), &car);
         }
-        printf("\"\n");
+        printf("\n");
     } else {
-        printf("ERROR: direccion fisica invalida");
+        printf("ERROR: direccion fisica invalida\n");
         setRegister(3,0xFFFFFFFF);
     }
 }
